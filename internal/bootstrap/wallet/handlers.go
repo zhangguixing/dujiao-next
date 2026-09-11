@@ -16,7 +16,7 @@ func New(c *container.Container) Handlers {
 	wallets := walletTransportAdapter{wallets: c.WalletService, payments: c.PaymentService}
 	return Handlers{
 		User: wallettransport.NewUserHandler(
-			wallets, wallets, c.UserStore, c.SettingService,
+			wallets, wallets, c.UserStore, c.SettingService, manualRechargeNotifier{notifications: c.NotificationService},
 		),
 		Admin: wallettransport.NewAdminHandler(
 			wallets, c.UserStore, c.PaymentChannelStore, c.PaymentStore, c.SettingService,

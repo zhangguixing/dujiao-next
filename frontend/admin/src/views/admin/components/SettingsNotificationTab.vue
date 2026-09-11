@@ -49,12 +49,14 @@ interface NotificationData {
     wallet_recharge_success: boolean
     order_paid_success: boolean
     manual_fulfillment_pending: boolean
+    manual_recharge_pending: boolean
     exception_alert: boolean
   }
   templates: {
     wallet_recharge_success: NotificationSceneTemplate
     order_paid_success: NotificationSceneTemplate
     manual_fulfillment_pending: NotificationSceneTemplate
+    manual_recharge_pending: NotificationSceneTemplate
     exception_alert: NotificationSceneTemplate
   }
 }
@@ -120,12 +122,14 @@ const form = reactive({
     wallet_recharge_success: true,
     order_paid_success: true,
     manual_fulfillment_pending: true,
+    manual_recharge_pending: true,
     exception_alert: true,
   },
   templates: {
     wallet_recharge_success: createNotificationSceneTemplate(),
     order_paid_success: createNotificationSceneTemplate(),
     manual_fulfillment_pending: createNotificationSceneTemplate(),
+    manual_recharge_pending: createNotificationSceneTemplate(),
     exception_alert: createNotificationSceneTemplate(),
   },
 })
@@ -151,6 +155,7 @@ const syncFromProps = () => {
   form.templates.wallet_recharge_success = deepCloneTemplate(props.data.templates.wallet_recharge_success)
   form.templates.order_paid_success = deepCloneTemplate(props.data.templates.order_paid_success)
   form.templates.manual_fulfillment_pending = deepCloneTemplate(props.data.templates.manual_fulfillment_pending)
+  form.templates.manual_recharge_pending = deepCloneTemplate(props.data.templates.manual_recharge_pending)
   form.templates.exception_alert = deepCloneTemplate(props.data.templates.exception_alert)
 }
 
@@ -293,6 +298,7 @@ const save = async () => {
         wallet_recharge_success: form.scenes.wallet_recharge_success,
         order_paid_success: form.scenes.order_paid_success,
         manual_fulfillment_pending: form.scenes.manual_fulfillment_pending,
+        manual_recharge_pending: form.scenes.manual_recharge_pending,
         exception_alert: form.scenes.exception_alert,
       },
       templates: form.templates,
@@ -533,6 +539,10 @@ defineExpose({ save, submitting })
               <Label class="text-sm">{{ t('admin.settings.notification.scenes.manualFulfillmentPending') }}</Label>
             </div>
             <div class="flex items-center gap-2 text-sm">
+              <Switch v-model="form.scenes.manual_recharge_pending" />
+              <Label class="text-sm">人工充值待审核</Label>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
               <Switch v-model="form.scenes.exception_alert" />
               <Label class="text-sm">{{ t('admin.settings.notification.scenes.exceptionAlert') }}</Label>
             </div>
@@ -567,6 +577,14 @@ defineExpose({ save, submitting })
               <div class="mt-3 space-y-2">
                 <Input v-model="form.templates.manual_fulfillment_pending[currentLang].title" :placeholder="t('admin.settings.notification.templates.titlePlaceholder')" />
                 <Textarea v-model="form.templates.manual_fulfillment_pending[currentLang].body" rows="4" :placeholder="t('admin.settings.notification.templates.bodyPlaceholder')" />
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-border bg-muted/10 p-4">
+              <h4 class="text-sm font-medium">人工充值待审核</h4>
+              <div class="mt-3 space-y-2">
+                <Input v-model="form.templates.manual_recharge_pending[currentLang].title" :placeholder="t('admin.settings.notification.templates.titlePlaceholder')" />
+                <Textarea v-model="form.templates.manual_recharge_pending[currentLang].body" rows="4" :placeholder="t('admin.settings.notification.templates.titlePlaceholder')" />
               </div>
             </div>
 

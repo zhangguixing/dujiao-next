@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	notificationcontract "github.com/dujiao-next/internal/modules/notification/contract"
 	paymentapp "github.com/dujiao-next/internal/modules/payment/application"
 
 	paymentdomain "github.com/dujiao-next/internal/modules/payment/domain"
@@ -15,6 +16,7 @@ import (
 	walletcontract "github.com/dujiao-next/internal/modules/wallet/contract"
 	walletdomain "github.com/dujiao-next/internal/modules/wallet/domain"
 	wallettransport "github.com/dujiao-next/internal/modules/wallet/transport/http"
+	"github.com/dujiao-next/internal/shared/jsonmap"
 	"github.com/dujiao-next/internal/shared/money"
 )
 
@@ -23,6 +25,22 @@ import (
 type walletTransportAdapter struct {
 	wallets  *walletapp.Service
 	payments *paymentapp.PaymentService
+}
+
+type manualRechargeNotifier struct {
+	notifications notificationcontract.NotificationEnqueuer
+}
+
+func (n manualRechargeNotifier) NotifyManualRechargePending(request *walletdomain.ManualRechargeRequest, user *userdomain.User) error {
+	if n.notifications == nil || request == nil {
+		return nil
+	}
+	label, email := "", ""
+	if user != nil {
+		label = user.DisplayName
+		email = user.Email
+	}
+	return n.notifications.Enqueue(notificationcontract.EnqueueInput{EventType: constants.NotificationEventManualRechargePending, BizType: constants.NotificationBizTypeManualRecharge, BizID: request.ID, Data: jsonmap.JSON{"request_no": request.RequestNo, "customer_label": label, "customer_email": email, "amount": request.Amount.StringFixed(2), "currency": request.Currency, "channel_id": fmt.Sprintf("%d", request.ChannelID), "transaction_no": request.TransactionNo, "contact_type": request.ContactType, "contact_value": request.ContactValue}})
 }
 
 func (a walletTransportAdapter) GetAccount(userID uint) (*walletdomain.Account, error) {

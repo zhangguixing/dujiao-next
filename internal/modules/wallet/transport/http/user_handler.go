@@ -1,7 +1,9 @@
 package wallethttp
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -72,6 +74,11 @@ type UserReader interface {
 	GetByID(id uint) (*userdomain.User, error)
 }
 
+// ManualRechargeNotifier emits an operator-facing alert after a request is stored.
+type ManualRechargeNotifier interface {
+	NotifyManualRechargePending(*walletdomain.ManualRechargeRequest, *userdomain.User) error
+}
+
 // SiteCurrencyReader 用于提供默认站点币种。
 type SiteCurrencyReader interface {
 	GetSiteCurrency(defaultValue string) (string, error)
@@ -106,13 +113,14 @@ type UserHandler struct {
 	payments PaymentService
 	users    UserReader
 	settings SiteCurrencyReader
+	notifier ManualRechargeNotifier
 }
 
-func NewUserHandler(wallets WalletService, payments PaymentService, users UserReader, settings SiteCurrencyReader) *UserHandler {
+func NewUserHandler(wallets WalletService, payments PaymentService, users UserReader, settings SiteCurrencyReader, notifier ManualRechargeNotifier) *UserHandler {
 	if wallets == nil || payments == nil || users == nil {
 		panic("wallet user handler: required dependency is nil")
 	}
-	return &UserHandler{wallets: wallets, payments: payments, users: users, settings: settings}
+	return &UserHandler{wallets: wallets, payments: payments, users: users, settings: settings, notifier: notifier}
 }
 
 type walletRechargeRequest struct {
@@ -127,13 +135,34 @@ type walletPaymentChannelsRequest struct {
 }
 
 type manualRechargeRequest struct {
-	ChannelID     uint   `json:"channel_id" binding:"required"`
-	Amount        string `json:"amount" binding:"required"`
-	TransactionNo string `json:"transaction_no" binding:"required"`
-	ContactType   string `json:"contact_type" binding:"required"`
-	ContactValue  string `json:"contact_value" binding:"required"`
-	ProofURL      string `json:"proof_url" binding:"required"`
+	ChannelID     uint   `json:"channel_id"`
+	Amount        string `json:"amount"`
+	TransactionNo string `json:"transaction_no"`
+	ContactType   string `json:"contact_type"`
+	ContactValue  string `json:"contact_value"`
+	ProofURL      string `json:"proof_url"`
 	Remark        string `json:"remark"`
+}
+
+// bindManualRechargeRequest accepts standard JSON and also tolerates a literal
+// "\\_" inserted by Markdown/copy tools before JSON field names. "\\_" is not
+// a valid JSON escape, so normalize only this known artefact before decoding.
+func bindManualRechargeRequest(c *gin.Context, req *manualRechargeRequest) error {
+	if c == nil || req == nil {
+		return errors.New("manual recharge request is required")
+	}
+	raw, err := c.GetRawData()
+	if err != nil {
+		return err
+	}
+	raw = bytes.ReplaceAll(raw, []byte(`\_`), []byte(`_`))
+	if err := json.Unmarshal(raw, req); err != nil {
+		return err
+	}
+	if req.ChannelID == 0 || strings.TrimSpace(req.Amount) == "" || strings.TrimSpace(req.TransactionNo) == "" || strings.TrimSpace(req.ContactType) == "" || strings.TrimSpace(req.ContactValue) == "" || strings.TrimSpace(req.ProofURL) == "" {
+		return errors.New("人工充值申请信息不完整")
+	}
+	return nil
 }
 
 func (h *UserHandler) GetPaymentChannels(c *gin.Context) {
@@ -187,8 +216,8 @@ func (h *UserHandler) CreateManualRecharge(c *gin.Context) {
 		return
 	}
 	var req manualRechargeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ginutil.RespondBindError(c, err)
+	if err := bindManualRechargeRequest(c, &req); err != nil {
+		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "请完整填写人工充值申请信息", err)
 		return
 	}
 	amount, err := decimal.NewFromString(strings.TrimSpace(req.Amount))
@@ -214,6 +243,12 @@ func (h *UserHandler) CreateManualRecharge(c *gin.Context) {
 			ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
 		}
 		return
+	}
+	if h.notifier != nil {
+		user, _ := h.users.GetByID(uid)
+		if notifyErr := h.notifier.NotifyManualRechargePending(created, user); notifyErr != nil {
+			ginutil.RequestLog(c).Warnw("manual_recharge_notification_enqueue_failed", "request_id", created.ID, "error", notifyErr)
+		}
 	}
 	response.Success(c, created)
 }

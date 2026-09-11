@@ -369,6 +369,7 @@ const (
 	NotificationEventWalletRechargeSuccess    = "wallet_recharge_success"
 	NotificationEventOrderPaidSuccess         = "order_paid_success"
 	NotificationEventManualFulfillmentPending = "manual_fulfillment_pending"
+	NotificationEventManualRechargePending    = "manual_recharge_pending"
 	NotificationEventExceptionAlert           = "exception_alert"
 	NotificationEventExceptionAlertCheck      = "exception_alert_check"
 )
@@ -564,6 +565,7 @@ var SupportedLocales = []string{LocaleZhCN, LocaleZhTW, LocaleEnUS}
 const (
 	NotificationBizTypeOrder           = "order"
 	NotificationBizTypeWalletRecharge  = "wallet_recharge"
+	NotificationBizTypeManualRecharge  = "manual_recharge"
 	NotificationBizTypeDashboardAlert  = "dashboard_alert"
 	NotificationBizTypePaymentCallback = "payment_callback"
 	NotificationBizTypeProcurement     = "procurement"

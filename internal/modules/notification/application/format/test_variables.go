@@ -60,6 +60,10 @@ func BuildTestVariables(scene, locale string) map[string]interface{} {
 			"fulfillment_items_summary": buildNotificationTestFulfillmentItems(locale),
 			"delivery_summary":          BuildDeliverySummary(locale, OrderItemCounts{Total: 2, Auto: 1, Manual: 1}),
 		}
+	case constants.NotificationEventManualRechargePending:
+		return map[string]interface{}{
+			"request_no": "MR202609110001", "customer_label": localizedNotificationText(locale, "张三", "張三", "Alex Zhang"), "customer_email": "zhangsan@example.com", "amount": "100.00", "currency": "CNY", "channel_id": "1", "transaction_no": "2026091100001", "contact_type": "tg", "contact_value": "@zhangsan",
+		}
 	default:
 		return map[string]interface{}{
 			"alert_type":             alertTypeLabelByType(locale, constants.NotificationAlertTypeLowStockProducts),
