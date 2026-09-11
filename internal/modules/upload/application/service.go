@@ -21,14 +21,15 @@ import (
 )
 
 var allowedUploadScenes = map[string]struct{}{
-	"product":  {},
-	"post":     {},
-	"banner":   {},
-	"editor":   {},
-	"common":   {},
-	"category": {},
-	"telegram": {},
-	"reseller": {},
+	"product":         {},
+	"post":            {},
+	"banner":          {},
+	"editor":          {},
+	"common":          {},
+	"category":        {},
+	"telegram":        {},
+	"reseller":        {},
+	"manual_recharge": {},
 }
 
 // Service 文件上传服务。

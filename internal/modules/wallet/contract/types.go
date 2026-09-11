@@ -40,6 +40,27 @@ type RechargeListFilter struct {
 	PaidTo       *time.Time
 }
 
+type ManualRechargeListFilter struct {
+	Page      int
+	PageSize  int
+	UserID    uint
+	Keyword   string
+	Status    string
+	ChannelID uint
+}
+
+type ManualRechargeCreateInput struct {
+	UserID        uint
+	ChannelID     uint
+	Amount        money.Amount
+	Currency      string
+	TransactionNo string
+	ContactType   string
+	ContactValue  string
+	ProofURL      string
+	Remark        string
+}
+
 type RechargeInput struct {
 	UserID   uint
 	Amount   money.Amount
@@ -56,13 +77,14 @@ type AdjustBalanceInput struct {
 }
 
 type CreditInput struct {
-	UserID    uint
-	Amount    money.Amount
-	Currency  string
-	Type      string
-	Reference string
-	Remark    string
-	OrderID   *uint
+	UserID          uint
+	Amount          money.Amount
+	Currency        string
+	Type            string
+	Reference       string
+	Remark          string
+	OrderID         *uint
+	OperatorAdminID *uint
 }
 
 type OrderBalanceInput struct {

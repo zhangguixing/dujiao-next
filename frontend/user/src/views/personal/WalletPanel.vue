@@ -26,6 +26,8 @@
       @submit="handleRecharge"
     />
 
+    <ManualRechargePanel @refresh="refreshCurrentPage" />
+
     <WalletTransactionList
       :loading="loading"
       :transactions="transactions"
@@ -48,6 +50,7 @@ import { amountToCents, basisPointsToPercent, calculateFeeCents, centsToAmount, 
 import WalletBalanceCard from '../../components/wallet/WalletBalanceCard.vue'
 import WalletRechargeForm from '../../components/wallet/WalletRechargeForm.vue'
 import WalletTransactionList from '../../components/wallet/WalletTransactionList.vue'
+import ManualRechargePanel from '../../components/wallet/ManualRechargePanel.vue'
 
 const { t } = useI18n()
 const route = useRoute()

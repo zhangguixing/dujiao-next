@@ -11,6 +11,8 @@ import (
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
 
 	"github.com/dujiao-next/internal/constants"
+	walletapp "github.com/dujiao-next/internal/modules/wallet/application"
+	walletcontract "github.com/dujiao-next/internal/modules/wallet/contract"
 	walletpresenter "github.com/dujiao-next/internal/modules/wallet/transport/presenter"
 	"github.com/dujiao-next/internal/platform/http/ginutil"
 	"github.com/dujiao-next/internal/platform/http/response"
@@ -50,6 +52,11 @@ type WalletService interface {
 	StatsUserRechargeOrders(userID uint, rechargeNo string) (map[string]int64, error)
 	GetRechargeOrderByRechargeNo(userID uint, rechargeNo string) (*walletdomain.RechargeOrder, error)
 	GetRechargeOrderByPaymentIDAndUser(paymentID uint, userID uint) (*walletdomain.RechargeOrder, error)
+	ListManualRechargeChannels(activeOnly bool) ([]walletdomain.ManualRechargeChannel, error)
+	CreateManualRechargeRequest(walletcontract.ManualRechargeCreateInput) (*walletdomain.ManualRechargeRequest, error)
+	ListManualRechargeRequests(walletcontract.ManualRechargeListFilter) ([]walletdomain.ManualRechargeRequest, int64, error)
+	GetManualRechargeRequestByNo(userID uint, requestNo string) (*walletdomain.ManualRechargeRequest, error)
+	CancelManualRechargeRequest(userID uint, requestNo string) (*walletdomain.ManualRechargeRequest, error)
 }
 
 // PaymentService 是用户钱包充值支付所需的最小端口。
@@ -68,6 +75,8 @@ type UserReader interface {
 // SiteCurrencyReader 用于提供默认站点币种。
 type SiteCurrencyReader interface {
 	GetSiteCurrency(defaultValue string) (string, error)
+	GetManualRechargeEnabled() bool
+	GetManualRechargeMinAmount() string
 }
 
 type CreateRechargePaymentInput struct {
@@ -117,6 +126,16 @@ type walletPaymentChannelsRequest struct {
 	Amount string `json:"amount" binding:"required"`
 }
 
+type manualRechargeRequest struct {
+	ChannelID     uint   `json:"channel_id" binding:"required"`
+	Amount        string `json:"amount" binding:"required"`
+	TransactionNo string `json:"transaction_no" binding:"required"`
+	ContactType   string `json:"contact_type" binding:"required"`
+	ContactValue  string `json:"contact_value" binding:"required"`
+	ProofURL      string `json:"proof_url" binding:"required"`
+	Remark        string `json:"remark"`
+}
+
 func (h *UserHandler) GetPaymentChannels(c *gin.Context) {
 	uid, ok := ginutil.GetUserID(c)
 	if !ok {
@@ -143,6 +162,100 @@ func (h *UserHandler) GetPaymentChannels(c *gin.Context) {
 		return
 	}
 	response.Success(c, channels)
+}
+
+func (h *UserHandler) GetManualRechargeChannels(c *gin.Context) {
+	if h.settings == nil || !h.settings.GetManualRechargeEnabled() {
+		response.Success(c, []walletdomain.ManualRechargeChannel{})
+		return
+	}
+	channels, err := h.wallets.ListManualRechargeChannels(true)
+	if err != nil {
+		ginutil.RespondError(c, response.CodeInternal, "error.payment_fetch_failed", err)
+		return
+	}
+	response.Success(c, channels)
+}
+
+func (h *UserHandler) CreateManualRecharge(c *gin.Context) {
+	uid, ok := ginutil.GetUserID(c)
+	if !ok {
+		return
+	}
+	if h.settings == nil || !h.settings.GetManualRechargeEnabled() {
+		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "人工充值暂未开启", nil)
+		return
+	}
+	var req manualRechargeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ginutil.RespondBindError(c, err)
+		return
+	}
+	amount, err := decimal.NewFromString(strings.TrimSpace(req.Amount))
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	if minimum, minimumErr := decimal.NewFromString(strings.TrimSpace(h.settings.GetManualRechargeMinAmount())); minimumErr == nil && minimum.GreaterThan(decimal.Zero) && amount.LessThan(minimum) {
+		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "充值金额未达到人工充值最低金额", nil)
+		return
+	}
+	currency := constants.SiteCurrencyDefault
+	if h.settings != nil {
+		if value, settingsErr := h.settings.GetSiteCurrency(constants.SiteCurrencyDefault); settingsErr == nil {
+			currency = value
+		}
+	}
+	created, err := h.wallets.CreateManualRechargeRequest(walletcontract.ManualRechargeCreateInput{UserID: uid, ChannelID: req.ChannelID, Amount: money.FromDecimal(amount), Currency: currency, TransactionNo: req.TransactionNo, ContactType: req.ContactType, ContactValue: req.ContactValue, ProofURL: req.ProofURL, Remark: req.Remark})
+	if err != nil {
+		if errors.Is(err, walletapp.ErrManualRechargeActive) {
+			ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "您有一笔待处理的人工充值申请，请先完成或撤销该申请", nil)
+		} else {
+			ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		}
+		return
+	}
+	response.Success(c, created)
+}
+
+func (h *UserHandler) ListManualRecharges(c *gin.Context) {
+	uid, ok := ginutil.GetUserID(c)
+	if !ok {
+		return
+	}
+	page, pageSize := ginutil.ParsePagination(c)
+	rows, total, err := h.wallets.ListManualRechargeRequests(walletcontract.ManualRechargeListFilter{Page: page, PageSize: pageSize, UserID: uid, Status: strings.TrimSpace(c.Query("status"))})
+	if err != nil {
+		ginutil.RespondError(c, response.CodeInternal, "error.user_fetch_failed", err)
+		return
+	}
+	response.SuccessWithPage(c, rows, response.BuildPagination(page, pageSize, total))
+}
+
+func (h *UserHandler) GetManualRecharge(c *gin.Context) {
+	uid, ok := ginutil.GetUserID(c)
+	if !ok {
+		return
+	}
+	row, err := h.wallets.GetManualRechargeRequestByNo(uid, c.Param("request_no"))
+	if err != nil {
+		ginutil.RespondError(c, response.CodeNotFound, "error.payment_not_found", nil)
+		return
+	}
+	response.Success(c, row)
+}
+
+func (h *UserHandler) CancelManualRecharge(c *gin.Context) {
+	uid, ok := ginutil.GetUserID(c)
+	if !ok {
+		return
+	}
+	row, err := h.wallets.CancelManualRechargeRequest(uid, c.Param("request_no"))
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	response.Success(c, row)
 }
 
 func (h *UserHandler) GetWallet(c *gin.Context) {

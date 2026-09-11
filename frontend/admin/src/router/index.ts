@@ -91,6 +91,12 @@ const routes = [
         meta: { permission: 'GET:/admin/wallet/recharges' },
       },
       {
+        path: 'manual-recharges',
+        name: 'manual-recharges',
+        component: () => import('@/views/admin/ManualRecharges.vue'),
+        meta: { permission: 'GET:/admin/wallet/manual-recharges' },
+      },
+      {
         path: 'wallet-config',
         name: 'wallet-config',
         component: () => import('@/views/admin/Wallet.vue'),

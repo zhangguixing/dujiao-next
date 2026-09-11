@@ -31,6 +31,18 @@ type Repository interface {
 	GetRechargeOrdersByPaymentIDs(paymentIDs []uint) ([]walletdomain.RechargeOrder, error)
 	ListRechargeOrdersAdmin(filter RechargeListFilter) ([]walletdomain.RechargeOrder, int64, error)
 	StatsRechargeOrders(filter RechargeListFilter) (map[string]int64, error)
+	CreateManualRechargeChannel(*walletdomain.ManualRechargeChannel) error
+	UpdateManualRechargeChannel(*walletdomain.ManualRechargeChannel) error
+	GetManualRechargeChannel(uint) (*walletdomain.ManualRechargeChannel, error)
+	ListManualRechargeChannels(bool) ([]walletdomain.ManualRechargeChannel, error)
+	CreateManualRechargeRequest(*walletdomain.ManualRechargeRequest) error
+	UpdateManualRechargeRequest(*walletdomain.ManualRechargeRequest) error
+	GetManualRechargeRequest(uint) (*walletdomain.ManualRechargeRequest, error)
+	GetManualRechargeRequestByNo(uint, string) (*walletdomain.ManualRechargeRequest, error)
+	GetActiveManualRechargeRequest(uint) (*walletdomain.ManualRechargeRequest, error)
+	GetManualRechargeRequestForUpdate(uint) (*walletdomain.ManualRechargeRequest, error)
+	GetManualRechargeChannelForUpdate(uint) (*walletdomain.ManualRechargeChannel, error)
+	ListManualRechargeRequests(ManualRechargeListFilter) ([]walletdomain.ManualRechargeRequest, int64, error)
 }
 
 // Transaction is the wallet-owned view of an already-open database
@@ -52,6 +64,15 @@ type UseCase interface {
 	GetRechargeOrderByRechargeNo(userID uint, rechargeNo string) (*walletdomain.RechargeOrder, error)
 	GetRechargeOrderByPaymentIDAndUser(paymentID, userID uint) (*walletdomain.RechargeOrder, error)
 	GetBalancesByUserIDs(userIDs []uint) (map[uint]money.Amount, error)
+	ListManualRechargeChannels(activeOnly bool) ([]walletdomain.ManualRechargeChannel, error)
+	SaveManualRechargeChannel(*walletdomain.ManualRechargeChannel) (*walletdomain.ManualRechargeChannel, error)
+	DeleteManualRechargeChannel(uint) error
+	CreateManualRechargeRequest(ManualRechargeCreateInput) (*walletdomain.ManualRechargeRequest, error)
+	ListManualRechargeRequests(ManualRechargeListFilter) ([]walletdomain.ManualRechargeRequest, int64, error)
+	GetManualRechargeRequestByNo(userID uint, requestNo string) (*walletdomain.ManualRechargeRequest, error)
+	CancelManualRechargeRequest(userID uint, requestNo string) (*walletdomain.ManualRechargeRequest, error)
+	ApproveManualRechargeRequest(adminID, requestID uint, note string) (*walletdomain.ManualRechargeRequest, error)
+	RejectManualRechargeRequest(adminID, requestID uint, note string) (*walletdomain.ManualRechargeRequest, error)
 
 	Recharge(input RechargeInput) (*walletdomain.Account, *walletdomain.Transaction, error)
 	AdminAdjustBalance(input AdjustBalanceInput) (*walletdomain.Account, *walletdomain.Transaction, error)

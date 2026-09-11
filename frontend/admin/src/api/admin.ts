@@ -430,6 +430,12 @@ export const adminAPI = {
     api.get(`/admin/users/${id}/wallet/transactions`, { params }),
   getWalletRecharges: (params?: Record<string, unknown>) =>
     api.get('/admin/wallet/recharges', { params }),
+  getManualRechargeChannels: () => api.get('/admin/manual-recharge-channels'),
+  createManualRechargeChannel: (data: Record<string, unknown>) => api.post('/admin/manual-recharge-channels', data),
+  updateManualRechargeChannel: (id: number, data: Record<string, unknown>) => api.put(`/admin/manual-recharge-channels/${id}`, data),
+  getManualRecharges: (params?: Record<string, unknown>) => api.get('/admin/wallet/manual-recharges', { params }),
+  approveManualRecharge: (id: number, data: { note?: string }) => api.post(`/admin/wallet/manual-recharges/${id}/approve`, data),
+  rejectManualRecharge: (id: number, data: { note: string }) => api.post(`/admin/wallet/manual-recharges/${id}/reject`, data),
   adjustUserWallet: (id: number, data: AdminAdjustWalletPayload) =>
     api.post(`/admin/users/${id}/wallet/adjust`, data),
   updateUser: (id: number, data: Partial<AdminUser>) => api.put(`/admin/users/${id}`, data),

@@ -10,6 +10,7 @@ uploads
 node_modules/
 # Added by goreleaser init:
 dist/
+.pnpm-store/
 
 # 前端构建产物与依赖（frontend/{admin,user}）
 frontend/*/dist/

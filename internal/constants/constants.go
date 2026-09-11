@@ -122,14 +122,25 @@ const (
 
 // 钱包交易类型常量
 const (
-	WalletTxnTypeRecharge    = "recharge"
-	WalletTxnTypeOrderPay    = "order_pay"
-	WalletTxnTypeOrderRefund = "order_refund"
-	WalletTxnTypeAdminAdjust = "admin_adjust"
-	WalletTxnTypeAdminRefund = "admin_refund"
-	WalletTxnTypeGiftCard    = "gift_card_redeem"
+	WalletTxnTypeRecharge       = "recharge"
+	WalletTxnTypeManualRecharge = "manual_recharge"
+	WalletTxnTypeOrderPay       = "order_pay"
+	WalletTxnTypeOrderRefund    = "order_refund"
+	WalletTxnTypeAdminAdjust    = "admin_adjust"
+	WalletTxnTypeAdminRefund    = "admin_refund"
+	WalletTxnTypeGiftCard       = "gift_card_redeem"
 	// WalletTxnTypeOrderUnderpaidCredit 记录"支付成功但金额不足以履约订单"时转入用户余额的款项。
 	WalletTxnTypeOrderUnderpaidCredit = "order_underpaid_credit"
+)
+
+// 人工充值申请状态。
+const (
+	ManualRechargeStatusPending    = "pending"
+	ManualRechargeStatusProcessing = "processing"
+	ManualRechargeStatusApproved   = "approved"
+	ManualRechargeStatusRejected   = "rejected"
+	ManualRechargeStatusCancelled  = "cancelled"
+	ManualRechargeStatusExpired    = "expired"
 )
 
 // 钱包交易方向常量
@@ -486,8 +497,10 @@ const (
 
 	SettingKeyNavConfig = "nav_config"
 
-	SettingKeyWalletConfig        = "wallet_config"
-	SettingFieldWalletOnlyPayment = "wallet_only_payment"
+	SettingKeyWalletConfig              = "wallet_config"
+	SettingFieldWalletOnlyPayment       = "wallet_only_payment"
+	SettingFieldManualRechargeEnabled   = "manual_recharge_enabled"
+	SettingFieldManualRechargeMinAmount = "manual_recharge_min_amount"
 
 	SettingKeyPaymentConfig                = "payment_config"
 	SettingFieldCustomerFeeEnabled         = "customer_fee_enabled"

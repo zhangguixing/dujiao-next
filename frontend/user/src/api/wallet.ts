@@ -15,6 +15,11 @@ export const walletAPI = {
         userApi.get(`/wallet/recharges/${encodeURIComponent(rechargeNo)}`),
     captureRechargePayment: (paymentID: number) =>
         userApi.post(`/wallet/recharge/payments/${paymentID}/capture`),
+    manualRechargeChannels: () => userApi.get('/wallet/manual-recharge-channels'),
+    createManualRecharge: (data: any) => userApi.post('/wallet/manual-recharges', data),
+    manualRecharges: (params?: any) => userApi.get('/wallet/manual-recharges', { params }),
+    cancelManualRecharge: (requestNo: string) => userApi.post(`/wallet/manual-recharges/${encodeURIComponent(requestNo)}/cancel`, {}),
+    uploadManualRechargeProof: (data: FormData) => userApi.post('/uploads/manual-recharge-proof', data),
 }
 
 export const giftCardAPI = {

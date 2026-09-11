@@ -53,6 +53,8 @@ func AutoMigrate() error {
 		&walletdomain.Account{},
 		&walletdomain.Transaction{},
 		&walletdomain.RechargeOrder{},
+		&walletdomain.ManualRechargeChannel{},
+		&walletdomain.ManualRechargeRequest{},
 		&auditlogdomain.UserLoginLog{},
 		&auditlogdomain.AuthzAuditLog{},
 		&notificationdomain.NotificationLog{},

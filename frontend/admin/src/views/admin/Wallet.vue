@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { notifyError, notifySuccess } from '@/utils/notify'
 import ComplianceGuardWrapper from '@/components/ComplianceGuardWrapper.vue'
 
@@ -15,6 +16,8 @@ const { t } = useI18n()
 const form = reactive({
   recharge_channel_ids: [] as number[],
   wallet_only_payment: false,
+  manual_recharge_enabled: false,
+  manual_recharge_min_amount: '',
 })
 const channels = ref<AdminPaymentChannel[]>([])
 const saving = ref(false)
@@ -29,9 +32,13 @@ const loadConfig = async () => {
       form.recharge_channel_ids = []
     }
     form.wallet_only_payment = !!data?.wallet_only_payment
+    form.manual_recharge_enabled = !!data?.manual_recharge_enabled
+    form.manual_recharge_min_amount = String(data?.manual_recharge_min_amount || '')
   } catch {
     form.recharge_channel_ids = []
     form.wallet_only_payment = false
+    form.manual_recharge_enabled = false
+    form.manual_recharge_min_amount = ''
   }
 }
 
@@ -61,6 +68,8 @@ const save = async () => {
       value: {
         recharge_channel_ids: form.recharge_channel_ids,
         wallet_only_payment: form.wallet_only_payment,
+        manual_recharge_enabled: form.manual_recharge_enabled,
+        manual_recharge_min_amount: form.manual_recharge_min_amount.trim() || '0',
       },
     } as any)
     notifySuccess(t('admin.settings.saved'))
@@ -95,6 +104,18 @@ onMounted(() => {
             <p class="text-xs text-muted-foreground mt-0.5">{{ t('admin.settings.wallet.walletOnlyPaymentTip') }}</p>
           </div>
           <Switch id="wallet-only-payment" v-model="form.wallet_only_payment" />
+        </div>
+        <div class="flex items-center justify-between border-t border-border pt-4">
+          <div>
+            <Label for="manual-recharge-enabled" class="text-sm font-medium">启用人工扫码充值</Label>
+            <p class="text-xs text-muted-foreground mt-0.5">开启后，用户可提交微信或支付宝转账凭证；收款码需在“人工充值审核”中配置。</p>
+          </div>
+          <Switch id="manual-recharge-enabled" v-model="form.manual_recharge_enabled" />
+        </div>
+        <div class="border-t border-border pt-4">
+          <Label for="manual-recharge-min-amount" class="text-sm font-medium">人工充值最低金额</Label>
+          <p class="mb-2 text-xs text-muted-foreground">所有人工充值方式共同适用；渠道自身最低金额更高时，以渠道设置为准。</p>
+          <Input id="manual-recharge-min-amount" v-model="form.manual_recharge_min_amount" class="max-w-xs" inputmode="decimal" placeholder="留空或 0 表示不设全局最低金额" />
         </div>
         <div class="border-t border-border pt-4">
           <Label class="block text-xs font-medium text-muted-foreground mb-2">{{ t('admin.settings.wallet.rechargeChannels') }}</Label>

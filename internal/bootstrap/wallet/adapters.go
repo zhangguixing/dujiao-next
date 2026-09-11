@@ -123,6 +123,42 @@ func (a walletTransportAdapter) CapturePayment(input wallettransport.CapturePaym
 	return payment, mapWalletTransportError(err)
 }
 
+func (a walletTransportAdapter) ListManualRechargeChannels(activeOnly bool) ([]walletdomain.ManualRechargeChannel, error) {
+	rows, err := a.wallets.ListManualRechargeChannels(activeOnly)
+	return rows, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) SaveManualRechargeChannel(channel *walletdomain.ManualRechargeChannel) (*walletdomain.ManualRechargeChannel, error) {
+	row, err := a.wallets.SaveManualRechargeChannel(channel)
+	return row, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) DeleteManualRechargeChannel(id uint) error {
+	return mapWalletTransportError(a.wallets.DeleteManualRechargeChannel(id))
+}
+func (a walletTransportAdapter) CreateManualRechargeRequest(input walletcontract.ManualRechargeCreateInput) (*walletdomain.ManualRechargeRequest, error) {
+	row, err := a.wallets.CreateManualRechargeRequest(input)
+	return row, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) ListManualRechargeRequests(filter walletcontract.ManualRechargeListFilter) ([]walletdomain.ManualRechargeRequest, int64, error) {
+	rows, total, err := a.wallets.ListManualRechargeRequests(filter)
+	return rows, total, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) GetManualRechargeRequestByNo(userID uint, no string) (*walletdomain.ManualRechargeRequest, error) {
+	row, err := a.wallets.GetManualRechargeRequestByNo(userID, no)
+	return row, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) CancelManualRechargeRequest(userID uint, no string) (*walletdomain.ManualRechargeRequest, error) {
+	row, err := a.wallets.CancelManualRechargeRequest(userID, no)
+	return row, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) ApproveManualRechargeRequest(adminID, requestID uint, note string) (*walletdomain.ManualRechargeRequest, error) {
+	row, err := a.wallets.ApproveManualRechargeRequest(adminID, requestID, note)
+	return row, mapWalletTransportError(err)
+}
+func (a walletTransportAdapter) RejectManualRechargeRequest(adminID, requestID uint, note string) (*walletdomain.ManualRechargeRequest, error) {
+	row, err := a.wallets.RejectManualRechargeRequest(adminID, requestID, note)
+	return row, mapWalletTransportError(err)
+}
+
 func mapWalletTransportError(err error) error {
 	if err == nil {
 		return nil

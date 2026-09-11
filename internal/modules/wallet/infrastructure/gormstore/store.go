@@ -344,3 +344,118 @@ func (s *Store) GetRechargeOrdersByPaymentIDs(paymentIDs []uint) ([]walletdomain
 	}
 	return orders, nil
 }
+
+func (s *Store) CreateManualRechargeChannel(channel *walletdomain.ManualRechargeChannel) error {
+	return s.db.Create(channel).Error
+}
+func (s *Store) UpdateManualRechargeChannel(channel *walletdomain.ManualRechargeChannel) error {
+	return s.db.Save(channel).Error
+}
+func (s *Store) GetManualRechargeChannel(id uint) (*walletdomain.ManualRechargeChannel, error) {
+	var channel walletdomain.ManualRechargeChannel
+	err := s.db.Where("id = ? AND deleted_at IS NULL", id).First(&channel).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &channel, nil
+}
+func (s *Store) GetManualRechargeChannelForUpdate(id uint) (*walletdomain.ManualRechargeChannel, error) {
+	var channel walletdomain.ManualRechargeChannel
+	err := s.db.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND deleted_at IS NULL", id).First(&channel).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &channel, nil
+}
+func (s *Store) ListManualRechargeChannels(activeOnly bool) ([]walletdomain.ManualRechargeChannel, error) {
+	query := s.db.Where("deleted_at IS NULL")
+	if activeOnly {
+		query = query.Where("enabled = ?", true)
+	}
+	var channels []walletdomain.ManualRechargeChannel
+	if err := query.Order("sort ASC, id DESC").Find(&channels).Error; err != nil {
+		return nil, err
+	}
+	return channels, nil
+}
+func (s *Store) CreateManualRechargeRequest(request *walletdomain.ManualRechargeRequest) error {
+	return s.db.Create(request).Error
+}
+func (s *Store) UpdateManualRechargeRequest(request *walletdomain.ManualRechargeRequest) error {
+	return s.db.Save(request).Error
+}
+func (s *Store) GetManualRechargeRequest(id uint) (*walletdomain.ManualRechargeRequest, error) {
+	var request walletdomain.ManualRechargeRequest
+	err := s.db.Where("id = ? AND deleted_at IS NULL", id).First(&request).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
+func (s *Store) GetManualRechargeRequestForUpdate(id uint) (*walletdomain.ManualRechargeRequest, error) {
+	var request walletdomain.ManualRechargeRequest
+	err := s.db.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND deleted_at IS NULL", id).First(&request).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
+func (s *Store) GetManualRechargeRequestByNo(userID uint, no string) (*walletdomain.ManualRechargeRequest, error) {
+	var request walletdomain.ManualRechargeRequest
+	err := s.db.Where("user_id = ? AND request_no = ? AND deleted_at IS NULL", userID, strings.TrimSpace(no)).First(&request).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
+func (s *Store) GetActiveManualRechargeRequest(userID uint) (*walletdomain.ManualRechargeRequest, error) {
+	var request walletdomain.ManualRechargeRequest
+	err := s.db.Where("active_user_id = ? AND deleted_at IS NULL", userID).First(&request).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
+func (s *Store) ListManualRechargeRequests(filter walletcontract.ManualRechargeListFilter) ([]walletdomain.ManualRechargeRequest, int64, error) {
+	query := s.db.Model(&walletdomain.ManualRechargeRequest{}).Where("deleted_at IS NULL")
+	if filter.UserID != 0 {
+		query = query.Where("user_id = ?", filter.UserID)
+	}
+	if filter.ChannelID != 0 {
+		query = query.Where("channel_id = ?", filter.ChannelID)
+	}
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if filter.Keyword != "" {
+		like := "%" + filter.Keyword + "%"
+		query = query.Where("request_no LIKE ? OR transaction_no LIKE ? OR contact_value LIKE ?", like, like, like)
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var requests []walletdomain.ManualRechargeRequest
+	if err := gormutil.ApplyPagination(query, filter.Page, filter.PageSize).Order("id DESC").Find(&requests).Error; err != nil {
+		return nil, 0, err
+	}
+	return requests, total, nil
+}

@@ -10,6 +10,11 @@ func RegisterUserRoutes(user gin.IRoutes, handler *UserHandler) {
 	user.GET("/wallet", handler.GetWallet)
 	user.GET("/wallet/transactions", handler.GetTransactions)
 	user.POST("/wallet/payment-channels", handler.GetPaymentChannels)
+	user.GET("/wallet/manual-recharge-channels", handler.GetManualRechargeChannels)
+	user.POST("/wallet/manual-recharges", handler.CreateManualRecharge)
+	user.GET("/wallet/manual-recharges", handler.ListManualRecharges)
+	user.GET("/wallet/manual-recharges/:request_no", handler.GetManualRecharge)
+	user.POST("/wallet/manual-recharges/:request_no/cancel", handler.CancelManualRecharge)
 	user.POST("/wallet/recharge", handler.Recharge)
 	user.GET("/wallet/recharges", handler.ListRecharges)
 	user.GET("/wallet/recharges/stats", handler.RechargeStats)
@@ -26,6 +31,13 @@ func RegisterAdminRoutes(paymentProtected gin.IRoutes, handler *AdminHandler) {
 	paymentProtected.GET("/users/:id/wallet/transactions", handler.GetUserTransactions)
 	paymentProtected.POST("/users/:id/wallet/adjust", handler.AdjustUserWallet)
 	paymentProtected.GET("/wallet/recharges", handler.GetRecharges)
+	paymentProtected.GET("/manual-recharge-channels", handler.GetManualRechargeChannels)
+	paymentProtected.POST("/manual-recharge-channels", handler.SaveManualRechargeChannel)
+	paymentProtected.PUT("/manual-recharge-channels/:id", handler.SaveManualRechargeChannel)
+	paymentProtected.DELETE("/manual-recharge-channels/:id", handler.DeleteManualRechargeChannel)
+	paymentProtected.GET("/wallet/manual-recharges", handler.GetManualRecharges)
+	paymentProtected.POST("/wallet/manual-recharges/:id/approve", handler.ApproveManualRecharge)
+	paymentProtected.POST("/wallet/manual-recharges/:id/reject", handler.RejectManualRecharge)
 }
 
 // RegisterChannelRoutes 注册渠道钱包端点。

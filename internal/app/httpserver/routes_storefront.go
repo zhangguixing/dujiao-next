@@ -21,6 +21,7 @@ import (
 	paymentcallbacktransport "github.com/dujiao-next/internal/modules/payment/transport/http/callback"
 	resellertransport "github.com/dujiao-next/internal/modules/reseller/transport/http/user"
 	publicconfigtransport "github.com/dujiao-next/internal/modules/settings/transport/http/public"
+	uploadtransport "github.com/dujiao-next/internal/modules/upload/transport/http"
 	wallettransport "github.com/dujiao-next/internal/modules/wallet/transport/http"
 
 	"github.com/gin-gonic/gin"
@@ -137,6 +138,7 @@ func registerStorefrontRoutes(
 		paymenttransport.RegisterUserWriteRoutes(user, paymentWriteHandler)
 		paymenttransport.RegisterUserLatestRoute(user, paymentLatestHandler)
 		wallettransport.RegisterUserRoutes(user, userWalletHandler)
+		uploadtransport.RegisterUserRoutes(user, uploadtransport.NewUserHandler(c.UploadService))
 		giftcardtransport.RegisterUserRoutes(user, userGiftCardHandler)
 		affiliatetransport.RegisterUserRoutes(user, affiliateHandler)
 

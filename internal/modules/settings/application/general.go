@@ -405,6 +405,36 @@ func (s *Service) GetWalletOnlyPayment() bool {
 	return parseSettingBool(raw)
 }
 
+// GetManualRechargeEnabled returns whether users may submit QR-code transfer recharge requests.
+// The safe default is disabled until an operator has configured and enabled it.
+func (s *Service) GetManualRechargeEnabled() bool {
+	if s == nil {
+		return false
+	}
+	value, err := s.GetByKey(constants.SettingKeyWalletConfig)
+	if err != nil || value == nil {
+		return false
+	}
+	return parseSettingBool(value[constants.SettingFieldManualRechargeEnabled])
+}
+
+// GetManualRechargeMinAmount returns the global lower limit for manual recharge.
+// A malformed or missing setting intentionally falls back to zero (no global limit).
+func (s *Service) GetManualRechargeMinAmount() string {
+	if s == nil {
+		return "0"
+	}
+	value, err := s.GetByKey(constants.SettingKeyWalletConfig)
+	if err != nil || value == nil {
+		return "0"
+	}
+	raw, ok := value[constants.SettingFieldManualRechargeMinAmount]
+	if !ok {
+		return "0"
+	}
+	return normalizeSettingText(raw)
+}
+
 // GetPaymentFeeConfig 获取支付手续费与旧订单兼容配置。
 func (s *Service) GetPaymentFeeConfig() PaymentFeeConfig {
 	fallback := DefaultPaymentFeeConfig()

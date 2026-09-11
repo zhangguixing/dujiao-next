@@ -71,7 +71,7 @@ func (s *Service) CreditInTransaction(
 	}
 
 	transaction := &walletdomain.Transaction{
-		UserID: input.UserID, OrderID: input.OrderID,
+		UserID: input.UserID, OperatorAdminID: input.OperatorAdminID, OrderID: input.OrderID,
 		Type: transactionType, Direction: constants.WalletTxnDirectionIn,
 		Amount: money.FromDecimal(amount), BalanceBefore: money.FromDecimal(before),
 		BalanceAfter: money.FromDecimal(after), Currency: normalizeCurrency(input.Currency),

@@ -7,6 +7,7 @@ import (
 
 	paymentdomain "github.com/dujiao-next/internal/modules/payment/domain"
 
+	walletcontract "github.com/dujiao-next/internal/modules/wallet/contract"
 	walletdomain "github.com/dujiao-next/internal/modules/wallet/domain"
 
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
@@ -29,6 +30,12 @@ type AdminWalletService interface {
 	ListAdminTransactions(userID uint, page, pageSize int, typ, direction string) ([]walletdomain.Transaction, int64, error)
 	ListRechargeOrdersAdmin(filter AdminRechargeListFilter) ([]walletdomain.RechargeOrder, int64, error)
 	AdminAdjustBalance(input AdjustBalanceInput) (*walletdomain.Account, *walletdomain.Transaction, error)
+	ListManualRechargeChannels(activeOnly bool) ([]walletdomain.ManualRechargeChannel, error)
+	SaveManualRechargeChannel(*walletdomain.ManualRechargeChannel) (*walletdomain.ManualRechargeChannel, error)
+	DeleteManualRechargeChannel(uint) error
+	ListManualRechargeRequests(walletcontract.ManualRechargeListFilter) ([]walletdomain.ManualRechargeRequest, int64, error)
+	ApproveManualRechargeRequest(adminID, requestID uint, note string) (*walletdomain.ManualRechargeRequest, error)
+	RejectManualRechargeRequest(adminID, requestID uint, note string) (*walletdomain.ManualRechargeRequest, error)
 }
 
 // AdminUserReader 是后台钱包所需的用户读取端口。
@@ -80,6 +87,21 @@ type AdminAdjustUserWalletRequest struct {
 	Operation string `json:"operation"` // add/subtract
 	Currency  string `json:"currency"`
 	Remark    string `json:"remark"`
+}
+
+type adminManualRechargeChannelRequest struct {
+	Name         string `json:"name" binding:"required"`
+	Type         string `json:"type" binding:"required"`
+	QRCodeURL    string `json:"qr_code_url" binding:"required"`
+	AccountName  string `json:"account_name"`
+	Instructions string `json:"instructions"`
+	MinAmount    string `json:"min_amount"`
+	MaxAmount    string `json:"max_amount"`
+	Enabled      bool   `json:"enabled"`
+	Sort         int    `json:"sort"`
+}
+type adminManualRechargeReviewRequest struct {
+	Note string `json:"note"`
 }
 
 type adminWalletRechargeUser struct {
@@ -308,6 +330,127 @@ func (h *AdminHandler) GetRecharges(c *gin.Context) {
 
 	pagination := response.BuildPagination(page, pageSize, total)
 	response.SuccessWithPage(c, items, pagination)
+}
+
+func (h *AdminHandler) GetManualRechargeChannels(c *gin.Context) {
+	channels, err := h.wallets.ListManualRechargeChannels(false)
+	if err != nil {
+		ginutil.RespondError(c, response.CodeInternal, "error.payment_fetch_failed", err)
+		return
+	}
+	response.Success(c, channels)
+}
+
+func (h *AdminHandler) SaveManualRechargeChannel(c *gin.Context) {
+	var req adminManualRechargeChannelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ginutil.RespondBindError(c, err)
+		return
+	}
+	id := uint(0)
+	if strings.TrimSpace(c.Param("id")) != "" {
+		parsed, err := ginutil.ParseParamUint(c, "id")
+		if err != nil {
+			ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+			return
+		}
+		id = parsed
+	}
+	min := decimal.Zero
+	if strings.TrimSpace(req.MinAmount) != "" {
+		value, err := decimal.NewFromString(strings.TrimSpace(req.MinAmount))
+		if err != nil {
+			ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+			return
+		}
+		min = value
+	}
+	max := decimal.Zero
+	if strings.TrimSpace(req.MaxAmount) != "" {
+		value, err := decimal.NewFromString(strings.TrimSpace(req.MaxAmount))
+		if err != nil {
+			ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+			return
+		}
+		max = value
+	}
+	item, err := h.wallets.SaveManualRechargeChannel(&walletdomain.ManualRechargeChannel{ID: id, Name: req.Name, Type: strings.ToLower(strings.TrimSpace(req.Type)), QRCodeURL: req.QRCodeURL, AccountName: req.AccountName, Instructions: req.Instructions, MinAmount: money.FromDecimal(min), MaxAmount: money.FromDecimal(max), Enabled: req.Enabled, Sort: req.Sort})
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	response.Success(c, item)
+}
+
+func (h *AdminHandler) DeleteManualRechargeChannel(c *gin.Context) {
+	id, err := ginutil.ParseParamUint(c, "id")
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	if err := h.wallets.DeleteManualRechargeChannel(id); err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	response.Success(c, gin.H{})
+}
+
+func (h *AdminHandler) GetManualRecharges(c *gin.Context) {
+	page, size := ginutil.ParsePagination(c)
+	channelID, err := ginutil.ParseQueryUint(c.Query("channel_id"), false)
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	rows, total, err := h.wallets.ListManualRechargeRequests(walletcontract.ManualRechargeListFilter{Page: page, PageSize: size, Status: strings.TrimSpace(c.Query("status")), Keyword: strings.TrimSpace(c.Query("keyword")), ChannelID: channelID})
+	if err != nil {
+		ginutil.RespondError(c, response.CodeInternal, "error.payment_fetch_failed", err)
+		return
+	}
+	response.SuccessWithPage(c, rows, response.BuildPagination(page, size, total))
+}
+
+func (h *AdminHandler) ApproveManualRecharge(c *gin.Context) {
+	adminID, ok := ginutil.GetAdminID(c)
+	if !ok {
+		return
+	}
+	id, err := ginutil.ParseParamUint(c, "id")
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	var req adminManualRechargeReviewRequest
+	_ = c.ShouldBindJSON(&req)
+	row, err := h.wallets.ApproveManualRechargeRequest(adminID, id, req.Note)
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	response.Success(c, row)
+}
+
+func (h *AdminHandler) RejectManualRecharge(c *gin.Context) {
+	adminID, ok := ginutil.GetAdminID(c)
+	if !ok {
+		return
+	}
+	id, err := ginutil.ParseParamUint(c, "id")
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	var req adminManualRechargeReviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ginutil.RespondBindError(c, err)
+		return
+	}
+	row, err := h.wallets.RejectManualRechargeRequest(adminID, id, req.Note)
+	if err != nil {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	response.Success(c, row)
 }
 
 // AdjustUserWallet 管理端增减用户余额

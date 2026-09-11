@@ -230,6 +230,12 @@ const navGroups = computed<NavGroup[]>(() => {
           permission: 'GET:/admin/wallet/recharges',
         },
         {
+          label: '人工充值审核',
+          to: '/manual-recharges',
+          icon: ReceiptText,
+          permission: 'GET:/admin/wallet/manual-recharges',
+        },
+        {
           label: t('admin.navItems.walletConfig'),
           to: '/wallet-config',
           icon: Wallet,
