@@ -253,7 +253,7 @@ func NotificationCenterDefaultSetting() NotificationCenterSetting {
 				},
 			},
 			ManualRechargePending: NotificationSceneTemplate{
-				ZHCN: NotificationLocalizedTemplate{Title: "待审核人工充值提醒", Body: "申请号：{{request_no}}\n用户：{{customer_label}}\n金额：{{amount}} {{currency}}\n收款方式：{{channel_id}}\n交易流水号：{{transaction_no}}\n联系方式：{{contact_type}} {{contact_value}}"},
+				ZHCN: NotificationLocalizedTemplate{Title: "用户申请人工充值", Body: "申请号：{{request_no}}\n用户：{{customer_label}}\n金额：{{amount}} {{currency}}\n收款方式：{{channel_id}}\n交易流水号：{{transaction_no}}\n联系方式：{{contact_type}} {{contact_value}}"},
 				ZHTW: NotificationLocalizedTemplate{Title: "待審核人工儲值提醒", Body: "申請號：{{request_no}}\n用戶：{{customer_label}}\n金額：{{amount}} {{currency}}\n交易流水號：{{transaction_no}}\n聯絡方式：{{contact_type}} {{contact_value}}"},
 				ENUS: NotificationLocalizedTemplate{Title: "Manual Recharge Review Required", Body: "Request: {{request_no}}\nCustomer: {{customer_label}}\nAmount: {{amount}} {{currency}}\nTransaction: {{transaction_no}}\nContact: {{contact_type}} {{contact_value}}"},
 			},

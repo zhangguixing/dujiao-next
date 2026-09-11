@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'
 import type { AdminProduct } from '@/api/types'
@@ -71,6 +71,8 @@ const emit = defineEmits<{
 }>()
 
 const submitting = ref(false)
+const telegramBotToken = ref('')
+const hasTelegramBotToken = ref(false)
 const productOptionsLoading = ref(false)
 const productKeyword = ref('')
 const productOptions = ref<AdminProduct[]>([])
@@ -185,6 +187,17 @@ const notifyErrorIfNeeded = (err: unknown, fallback: string) => {
   const known = err as Error & { __notified?: boolean }
   if (known?.__notified) return
   notifyError(known?.message || fallback)
+}
+
+const loadTelegramBotTokenStatus = async () => {
+  try {
+    const response = await adminAPI.getTelegramAuthSettings()
+    const data = response.data?.data as Record<string, unknown> | undefined
+    hasTelegramBotToken.value = !!data?.has_bot_token
+  } catch {
+    // 通知中心本身仍可使用；没有 Telegram 设置权限时只是不展示已配置状态。
+    hasTelegramBotToken.value = false
+  }
 }
 
 const buildProductLabel = (product: AdminProduct) => {
@@ -304,6 +317,13 @@ const save = async () => {
       templates: form.templates,
     }
     await adminAPI.updateNotificationCenterSettings(payload)
+    if (telegramBotToken.value.trim() !== '') {
+      await adminAPI.updateTelegramAuthSettings({
+        bot_token: telegramBotToken.value.trim(),
+      })
+      telegramBotToken.value = ''
+      hasTelegramBotToken.value = true
+    }
     notifySuccess(t('admin.settings.alerts.saveSuccess'))
     emit('saved')
   } catch (err) {
@@ -312,6 +332,10 @@ const save = async () => {
     submitting.value = false
   }
 }
+
+onMounted(() => {
+  void loadTelegramBotTokenStatus()
+})
 
 defineExpose({ save, submitting })
 </script>
@@ -448,6 +472,18 @@ defineExpose({ save, submitting })
                 <Switch v-model="form.channels.telegram.enabled" />
                 <Label class="text-sm">{{ t('admin.settings.notification.channels.telegram.enabled') }}</Label>
               </div>
+              <div class="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+                <label class="text-xs font-medium text-muted-foreground">Telegram Bot Token</label>
+                <Input
+                  v-model="telegramBotToken"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="从 @BotFather 获取的 Bot Token"
+                />
+                <p class="text-xs text-muted-foreground">
+                  {{ hasTelegramBotToken ? '已配置 Bot Token；留空将保持不变。' : '用于发送通知；仅需填写 Token，不会启用 Telegram 登录。' }}
+                </p>
+              </div>
               <div class="space-y-2">
                 <label class="text-xs font-medium text-muted-foreground">{{ t('admin.settings.notification.channels.telegram.recipients') }}</label>
                 <Textarea
@@ -540,7 +576,7 @@ defineExpose({ save, submitting })
             </div>
             <div class="flex items-center gap-2 text-sm">
               <Switch v-model="form.scenes.manual_recharge_pending" />
-              <Label class="text-sm">人工充值待审核</Label>
+              <Label class="text-sm">用户申请人工充值</Label>
             </div>
             <div class="flex items-center gap-2 text-sm">
               <Switch v-model="form.scenes.exception_alert" />
@@ -581,7 +617,7 @@ defineExpose({ save, submitting })
             </div>
 
             <div class="rounded-lg border border-border bg-muted/10 p-4">
-              <h4 class="text-sm font-medium">人工充值待审核</h4>
+              <h4 class="text-sm font-medium">用户申请人工充值</h4>
               <div class="mt-3 space-y-2">
                 <Input v-model="form.templates.manual_recharge_pending[currentLang].title" :placeholder="t('admin.settings.notification.templates.titlePlaceholder')" />
                 <Textarea v-model="form.templates.manual_recharge_pending[currentLang].body" rows="4" :placeholder="t('admin.settings.notification.templates.titlePlaceholder')" />

@@ -158,7 +158,7 @@ const testScenes = computed(() => [
   { value: 'wallet_recharge_success', label: t('admin.settings.notification.scenes.walletRechargeSuccess') },
   { value: 'order_paid_success', label: t('admin.settings.notification.scenes.orderPaidSuccess') },
   { value: 'manual_fulfillment_pending', label: t('admin.settings.notification.scenes.manualFulfillmentPending') },
-  { value: 'manual_recharge_pending', label: '人工充值待审核' },
+  { value: 'manual_recharge_pending', label: '用户申请人工充值' },
   { value: 'exception_alert', label: t('admin.settings.notification.scenes.exceptionAlert') },
 ])
 
@@ -281,7 +281,7 @@ const notificationSceneLabel = (value: string) => {
     wallet_recharge_success: 'admin.settings.notification.scenes.walletRechargeSuccess',
     order_paid_success: 'admin.settings.notification.scenes.orderPaidSuccess',
     manual_fulfillment_pending: 'admin.settings.notification.scenes.manualFulfillmentPending',
-    manual_recharge_pending: '人工充值待审核',
+    manual_recharge_pending: '用户申请人工充值',
     exception_alert: 'admin.settings.notification.scenes.exceptionAlert',
   }
   const key = keyMap[value]
