@@ -49,6 +49,19 @@ func TestSignEmptyBody(t *testing.T) {
 	}
 }
 
+func TestSignV2CardNetDocumentVector(t *testing.T) {
+	const secret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	const want = "09cf5cedb04ba4b32552c7e9d8c533368eeb48dd9ba1b72fd1e2c151e9487819"
+
+	got := SignV2(secret, "POST", "/api/v1/upstream/ping", "1709625600", "550e8400-e29b-41d4-a716-446655440000", nil)
+	if got != want {
+		t.Fatalf("CardNet v2 signature = %s, want %s", got, want)
+	}
+	if !VerifyV2(secret, "POST", "/api/v1/upstream/ping", "1709625600", "550e8400-e29b-41d4-a716-446655440000", got, nil) {
+		t.Fatal("CardNet v2 signature should verify")
+	}
+}
+
 func TestIsTimestampValid(t *testing.T) {
 	now := time.Now().Unix()
 

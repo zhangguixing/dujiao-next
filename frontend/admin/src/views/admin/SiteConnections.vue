@@ -401,6 +401,7 @@ onMounted(() => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dujiao-next">dujiao-next</SelectItem>
+                  <SelectItem value="cardnet-v2">cardnet-v2</SelectItem>
                 </SelectContent>
               </Select>
             </div>

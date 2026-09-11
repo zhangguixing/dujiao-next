@@ -1,0 +1,33 @@
+services:
+  dujiao-next:
+    image: dujiaonext/dujiao-next:${TAG}
+    build:
+      dockerfile: Dockerfile
+    container_name: dujiao-next
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      DJ_DEFAULT_ADMIN_USERNAME: ${DJ_DEFAULT_ADMIN_USERNAME}
+      DJ_DEFAULT_ADMIN_PASSWORD: ${DJ_DEFAULT_ADMIN_PASSWORD}
+    ports:
+      - "${APP_PORT}:8080"
+    volumes:
+      - ./config/config.yml:/app/config.yml:ro
+      - ./data/db:/app/db
+      - ./data/uploads:/app/uploads
+      - ./data/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - dujiao-net
+      - db-network
+
+networks:
+  dujiao-net:
+    driver: bridge
+  db-network:
+    external: true
+    name: db-network

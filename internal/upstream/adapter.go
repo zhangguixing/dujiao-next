@@ -178,6 +178,8 @@ func NewAdapter(conn *siteconnectiondomain.Connection, uploadsDir string) (Adapt
 	switch conn.Protocol {
 	case constants.ConnectionProtocolDujiaoNext:
 		return NewDujiaoNextAdapter(conn, uploadsDir), nil
+	case constants.ConnectionProtocolCardNetV2:
+		return NewCardNetV2Adapter(conn, uploadsDir), nil
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %s", conn.Protocol)
 	}

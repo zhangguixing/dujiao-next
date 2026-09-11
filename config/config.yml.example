@@ -26,6 +26,8 @@ log:
   compress: true
 
 database:
+  # driver: postgres
+  # dsn: host=postgres user=dujiao password=dujiao_pass dbname=dujiao_next port=5432 sslmode=disable TimeZone=Asia/Shanghai
   driver: sqlite  # sqlite / postgres
   dsn: ./db/dujiao.db
   pool:
@@ -74,7 +76,7 @@ google_auth:
 
 redis:
   enabled: true
-  host: 127.0.0.1
+  host: redis
   port: 6379
   password: ""
   db: 0
@@ -82,7 +84,7 @@ redis:
 
 queue:
   enabled: true
-  host: 127.0.0.1
+  host: redis
   port: 6379
   password: ""
   db: 1

@@ -432,6 +432,10 @@ const (
 // 对接协议类型常量
 const (
 	ConnectionProtocolDujiaoNext = "dujiao-next"
+	// ConnectionProtocolCardNetV2 is CardNet's nonce-protected upstream API.
+	// Its resources match the Dujiao-Next upstream contract, while its request
+	// signing uses the v2 canonical form.
+	ConnectionProtocolCardNetV2 = "cardnet-v2"
 )
 
 // API 凭证状态常量

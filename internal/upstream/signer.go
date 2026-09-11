@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,8 @@ const (
 	HeaderApiKey = "Dujiao-Next-Api-Key"
 	// HeaderTimestamp 时间戳 header
 	HeaderTimestamp = "Dujiao-Next-Timestamp"
+	// HeaderNonce is required by CardNet API v2 to prevent request replay.
+	HeaderNonce = "Dujiao-Next-Nonce"
 	// HeaderSignature 签名 header
 	HeaderSignature = "Dujiao-Next-Signature"
 
@@ -36,6 +39,25 @@ func Sign(secret, method, path string, timestamp int64, body []byte) string {
 // Verify 验证签名
 func Verify(secret, method, path, signature string, timestamp int64, body []byte) bool {
 	expected := Sign(secret, method, path, timestamp, body)
+	return hmac.Equal([]byte(expected), []byte(signature))
+}
+
+// SignV2 generates the CardNet API v2 HMAC-SHA256 signature.
+// canonical = "{METHOD}\\n{PATH}\\n{TIMESTAMP}\\n{NONCE}\\n{SHA256(raw body)}"
+// API secrets are deliberately used as their original UTF-8 bytes; in
+// particular, a hex-looking secret must not be hex-decoded first.
+func SignV2(secret, method, path, timestamp, nonce string, body []byte) string {
+	bodyHash := sha256.Sum256(body)
+	canonical := fmt.Sprintf("%s\n%s\n%s\n%s\n%s",
+		strings.ToUpper(method), path, timestamp, nonce, hex.EncodeToString(bodyHash[:]))
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, _ = mac.Write([]byte(canonical))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// VerifyV2 verifies a CardNet API v2 signature.
+func VerifyV2(secret, method, path, timestamp, nonce, signature string, body []byte) bool {
+	expected := SignV2(secret, method, path, timestamp, nonce, body)
 	return hmac.Equal([]byte(expected), []byte(signature))
 }
 
