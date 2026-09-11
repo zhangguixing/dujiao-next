@@ -100,7 +100,17 @@ func (s *Service) CreateManualRechargeRequest(input walletcontract.ManualRecharg
 			return err
 		}
 		if active != nil {
-			return ErrManualRechargeActive
+			// Old versions could leave active_user_id populated after a request had
+			// already reached a terminal status. Release that stale unique-key claim
+			// here so a cancelled/rejected/completed request never blocks a new one.
+			if active.Status == constants.ManualRechargeStatusPending || active.Status == constants.ManualRechargeStatusProcessing {
+				return ErrManualRechargeActive
+			}
+			active.ActiveUserID = nil
+			active.UpdatedAt = time.Now()
+			if err := repo.UpdateManualRechargeRequest(active); err != nil {
+				return err
+			}
 		}
 		now := time.Now()
 		userID := input.UserID

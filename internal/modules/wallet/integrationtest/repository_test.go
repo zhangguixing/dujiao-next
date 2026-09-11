@@ -62,10 +62,78 @@ func setupWalletRepositoryTest(t *testing.T) (*walletgormstore.Store, *gorm.DB) 
 		&walletdomain.Account{},
 		&walletdomain.Transaction{},
 		&walletdomain.RechargeOrder{},
+		&walletdomain.ManualRechargeChannel{},
+		&walletdomain.ManualRechargeRequest{},
 	); err != nil {
 		t.Fatalf("auto migrate failed: %v", err)
 	}
 	return walletgormstore.New(db), db
+}
+
+func TestManualRechargeCanBeSubmittedAfterCancellation(t *testing.T) {
+	repo, _ := setupWalletRepositoryTest(t)
+	service := walletapp.NewService(walletapp.Options{Repository: repo, Transactions: repo})
+	channel, err := service.SaveManualRechargeChannel(&walletdomain.ManualRechargeChannel{
+		Name:      "Test WeChat",
+		Type:      "wechat",
+		QRCodeURL: "https://example.com/wechat.png",
+		Enabled:   true,
+	})
+	if err != nil {
+		t.Fatalf("create manual recharge channel: %v", err)
+	}
+
+	first, err := service.CreateManualRechargeRequest(walletcontract.ManualRechargeCreateInput{
+		UserID: 1, ChannelID: channel.ID, Amount: money.FromDecimal(decimal.NewFromInt(10)), Currency: "CNY",
+		TransactionNo: "cancel-and-resubmit-1", ContactType: "tg", ContactValue: "@tester", ProofURL: "/uploads/proof-1.png",
+	})
+	if err != nil {
+		t.Fatalf("create first manual recharge request: %v", err)
+	}
+	if _, err := service.CancelManualRechargeRequest(1, first.RequestNo); err != nil {
+		t.Fatalf("cancel manual recharge request: %v", err)
+	}
+
+	second, err := service.CreateManualRechargeRequest(walletcontract.ManualRechargeCreateInput{
+		UserID: 1, ChannelID: channel.ID, Amount: money.FromDecimal(decimal.NewFromInt(20)), Currency: "CNY",
+		TransactionNo: "cancel-and-resubmit-2", ContactType: "email", ContactValue: "tester@example.com", ProofURL: "/uploads/proof-2.png",
+	})
+	if err != nil {
+		t.Fatalf("submit after cancellation: %v", err)
+	}
+	if second.ID == first.ID {
+		t.Fatalf("second request ID = %d, want a new request", second.ID)
+	}
+}
+
+func TestManualRechargeReleasesStaleTerminalRequestClaim(t *testing.T) {
+	repo, db := setupWalletRepositoryTest(t)
+	service := walletapp.NewService(walletapp.Options{Repository: repo, Transactions: repo})
+	channel, err := service.SaveManualRechargeChannel(&walletdomain.ManualRechargeChannel{
+		Name:      "Test Alipay",
+		Type:      "alipay",
+		QRCodeURL: "https://example.com/alipay.png",
+		Enabled:   true,
+	})
+	if err != nil {
+		t.Fatalf("create manual recharge channel: %v", err)
+	}
+	userID := uint(2)
+	stale := walletdomain.ManualRechargeRequest{
+		RequestNo: "MR-STALE-2", UserID: userID, ActiveUserID: &userID, ChannelID: channel.ID,
+		Amount: money.FromDecimal(decimal.NewFromInt(10)), Currency: "CNY", TransactionNo: "stale-terminal-claim",
+		ContactType: "tg", ContactValue: "@tester", ProofURL: "/uploads/stale.png", Status: constants.ManualRechargeStatusCancelled,
+	}
+	if err := db.Create(&stale).Error; err != nil {
+		t.Fatalf("create stale request: %v", err)
+	}
+
+	if _, err := service.CreateManualRechargeRequest(walletcontract.ManualRechargeCreateInput{
+		UserID: userID, ChannelID: channel.ID, Amount: money.FromDecimal(decimal.NewFromInt(20)), Currency: "CNY",
+		TransactionNo: "replacement-after-stale-claim", ContactType: "tg", ContactValue: "@tester", ProofURL: "/uploads/replacement.png",
+	}); err != nil {
+		t.Fatalf("submit after stale terminal request: %v", err)
+	}
 }
 
 func TestWalletRepositoryListRechargeOrdersAdmin(t *testing.T) {
