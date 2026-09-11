@@ -16,6 +16,7 @@ import (
 var (
 	ErrManualRechargeNotFound      = errors.New("manual recharge request not found")
 	ErrManualRechargeActive        = errors.New("manual recharge request already active")
+	ErrManualRechargeTransactionNo = errors.New("manual recharge transaction number already used")
 	ErrManualRechargeInvalid       = errors.New("manual recharge request invalid")
 	ErrManualRechargeStatusInvalid = errors.New("manual recharge request status invalid")
 )
@@ -114,10 +115,44 @@ func (s *Service) CreateManualRechargeRequest(input walletcontract.ManualRecharg
 		}
 		now := time.Now()
 		userID := input.UserID
-		request := &walletdomain.ManualRechargeRequest{RequestNo: fmt.Sprintf("MR%d%d", now.UnixMilli(), input.UserID), UserID: input.UserID, ChannelID: input.ChannelID, ActiveUserID: &userID, Amount: money.FromDecimal(amount), Currency: normalizeCurrency(input.Currency), TransactionNo: strings.TrimSpace(input.TransactionNo), ContactType: contactType, ContactValue: strings.TrimSpace(input.ContactValue), ProofURL: strings.TrimSpace(input.ProofURL), Remark: strings.TrimSpace(input.Remark), Status: constants.ManualRechargeStatusPending, CreatedAt: now, UpdatedAt: now}
+		transactionNo := strings.TrimSpace(input.TransactionNo)
+		existing, err := repo.GetManualRechargeRequestByChannelAndTransactionNo(input.ChannelID, transactionNo)
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			// A user may cancel before correcting their contact details or proof and
+			// then submit the same real bank/payment transaction number again. Reopen
+			// that cancelled request instead of treating the database unique key as an
+			// unrelated active request.
+			if existing.UserID != input.UserID || existing.Status != constants.ManualRechargeStatusCancelled {
+				return ErrManualRechargeTransactionNo
+			}
+			existing.ActiveUserID = &userID
+			existing.Amount = money.FromDecimal(amount)
+			existing.Currency = normalizeCurrency(input.Currency)
+			existing.ContactType = contactType
+			existing.ContactValue = strings.TrimSpace(input.ContactValue)
+			existing.ProofURL = strings.TrimSpace(input.ProofURL)
+			existing.Remark = strings.TrimSpace(input.Remark)
+			existing.Status = constants.ManualRechargeStatusPending
+			existing.ReviewNote = ""
+			existing.ReviewedBy = nil
+			existing.ReviewedAt = nil
+			existing.UpdatedAt = now
+			if err := repo.UpdateManualRechargeRequest(existing); err != nil {
+				return err
+			}
+			result = existing
+			return nil
+		}
+		request := &walletdomain.ManualRechargeRequest{RequestNo: fmt.Sprintf("MR%d%d", now.UnixMilli(), input.UserID), UserID: input.UserID, ChannelID: input.ChannelID, ActiveUserID: &userID, Amount: money.FromDecimal(amount), Currency: normalizeCurrency(input.Currency), TransactionNo: transactionNo, ContactType: contactType, ContactValue: strings.TrimSpace(input.ContactValue), ProofURL: strings.TrimSpace(input.ProofURL), Remark: strings.TrimSpace(input.Remark), Status: constants.ManualRechargeStatusPending, CreatedAt: now, UpdatedAt: now}
 		if err := repo.CreateManualRechargeRequest(request); err != nil {
-			// The active_user_id unique index wins races even if both requests passed the read.
-			return ErrManualRechargeActive
+			// A concurrent request can still win either unique index after the reads above.
+			if concurrent, lookupErr := repo.GetActiveManualRechargeRequest(input.UserID); lookupErr == nil && concurrent != nil {
+				return ErrManualRechargeActive
+			}
+			return ErrManualRechargeTransactionNo
 		}
 		result = request
 		return nil

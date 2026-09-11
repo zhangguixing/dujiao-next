@@ -39,6 +39,7 @@ type Repository interface {
 	UpdateManualRechargeRequest(*walletdomain.ManualRechargeRequest) error
 	GetManualRechargeRequest(uint) (*walletdomain.ManualRechargeRequest, error)
 	GetManualRechargeRequestByNo(uint, string) (*walletdomain.ManualRechargeRequest, error)
+	GetManualRechargeRequestByChannelAndTransactionNo(uint, string) (*walletdomain.ManualRechargeRequest, error)
 	GetActiveManualRechargeRequest(uint) (*walletdomain.ManualRechargeRequest, error)
 	GetManualRechargeRequestForUpdate(uint) (*walletdomain.ManualRechargeRequest, error)
 	GetManualRechargeChannelForUpdate(uint) (*walletdomain.ManualRechargeChannel, error)

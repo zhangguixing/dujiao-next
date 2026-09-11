@@ -423,6 +423,17 @@ func (s *Store) GetManualRechargeRequestByNo(userID uint, no string) (*walletdom
 	}
 	return &request, nil
 }
+func (s *Store) GetManualRechargeRequestByChannelAndTransactionNo(channelID uint, transactionNo string) (*walletdomain.ManualRechargeRequest, error) {
+	var request walletdomain.ManualRechargeRequest
+	err := s.db.Where("channel_id = ? AND transaction_no = ? AND deleted_at IS NULL", channelID, strings.TrimSpace(transactionNo)).First(&request).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
 func (s *Store) GetActiveManualRechargeRequest(userID uint) (*walletdomain.ManualRechargeRequest, error) {
 	var request walletdomain.ManualRechargeRequest
 	err := s.db.Where("active_user_id = ? AND deleted_at IS NULL", userID).First(&request).Error

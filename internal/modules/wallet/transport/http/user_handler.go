@@ -239,6 +239,8 @@ func (h *UserHandler) CreateManualRecharge(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, walletapp.ErrManualRechargeActive) {
 			ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "您有一笔待处理的人工充值申请，请先完成或撤销该申请", nil)
+		} else if errors.Is(err, walletapp.ErrManualRechargeTransactionNo) {
+			ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "该交易流水号已被使用，请核对后再提交", nil)
 		} else {
 			ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
 		}

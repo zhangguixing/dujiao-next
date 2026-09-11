@@ -96,13 +96,16 @@ func TestManualRechargeCanBeSubmittedAfterCancellation(t *testing.T) {
 
 	second, err := service.CreateManualRechargeRequest(walletcontract.ManualRechargeCreateInput{
 		UserID: 1, ChannelID: channel.ID, Amount: money.FromDecimal(decimal.NewFromInt(20)), Currency: "CNY",
-		TransactionNo: "cancel-and-resubmit-2", ContactType: "email", ContactValue: "tester@example.com", ProofURL: "/uploads/proof-2.png",
+		TransactionNo: "cancel-and-resubmit-1", ContactType: "email", ContactValue: "tester@example.com", ProofURL: "/uploads/proof-2.png",
 	})
 	if err != nil {
 		t.Fatalf("submit after cancellation: %v", err)
 	}
-	if second.ID == first.ID {
-		t.Fatalf("second request ID = %d, want a new request", second.ID)
+	if second.ID != first.ID {
+		t.Fatalf("second request ID = %d, want cancelled request %d to be reopened", second.ID, first.ID)
+	}
+	if second.Status != constants.ManualRechargeStatusPending || second.ActiveUserID == nil || *second.ActiveUserID != 1 {
+		t.Fatalf("reopened request is not active and pending: %+v", second)
 	}
 }
 
