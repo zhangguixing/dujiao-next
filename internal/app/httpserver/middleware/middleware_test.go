@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestResolveAllowedOrigin(t *testing.T) {
@@ -69,6 +71,25 @@ func TestRequestIDMiddleware(t *testing.T) {
 	}
 	if resp := strings.TrimSpace(generated); resp == "" {
 		t.Fatalf("generated request id should not be blank")
+	}
+}
+
+func TestLoggerMiddlewareSkipsSuccessfulHealthProbes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	core, logs := observer.New(zap.InfoLevel)
+	r := gin.New()
+	r.Use(LoggerMiddleware(zap.New(core)))
+	r.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
+	r.GET("/orders", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/health", nil))
+	if got := logs.FilterMessage("request").Len(); got != 0 {
+		t.Fatalf("successful health probe logged %d requests, want 0", got)
+	}
+
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/orders", nil))
+	if got := logs.FilterMessage("request").Len(); got != 1 {
+		t.Fatalf("ordinary request logs = %d, want 1", got)
 	}
 }
 

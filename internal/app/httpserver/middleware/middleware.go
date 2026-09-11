@@ -123,6 +123,11 @@ func LoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 		start := time.Now()
 		c.Next()
 
+		// Container and load-balancer probes can be very frequent. Keep /health
+		// available, but do not emit a successful access log for it. Errors still
+		// go through the branch below so operational failures remain visible.
+		isHealthProbe := c.Request.Method == http.MethodGet && c.Request.URL.Path == "/health"
+
 		log := sugar.With(
 			"request_id", getRequestID(c),
 			"method", c.Request.Method,
@@ -133,6 +138,9 @@ func LoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 		)
 		if len(c.Errors) > 0 {
 			log.Errorw("request", "errors", c.Errors.String())
+			return
+		}
+		if isHealthProbe && c.Writer.Status() < http.StatusBadRequest {
 			return
 		}
 		log.Infow("request")
