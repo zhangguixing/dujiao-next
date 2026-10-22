@@ -1,7 +1,12 @@
 package siteconnection_test
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	siteconnectionapp "github.com/dujiao-next/internal/modules/siteconnection/application"
@@ -10,6 +15,7 @@ import (
 
 	"github.com/dujiao-next/internal/constants"
 	"github.com/dujiao-next/internal/crypto"
+	"github.com/dujiao-next/internal/upstream"
 
 	"github.com/shopspring/decimal"
 )
@@ -46,6 +52,69 @@ func TestSiteConnectionServicePingReturnsAdapterCreationError(t *testing.T) {
 	}
 	if repo.updated {
 		t.Fatalf("connection should not be updated when adapter creation fails")
+	}
+}
+
+func TestCardNetAuthenticationPauseSurvivesServiceRestartAndRequiresPing(t *testing.T) {
+	var unauthorized atomic.Bool
+	unauthorized.Store(true)
+	var calls atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		if unauthorized.Load() {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":"authentication_failed"}`))
+			return
+		}
+		if r.URL.Path == "/api/v1/upstream/ping" {
+			_, _ = w.Write([]byte(`{"ok":true,"balance":"10.00"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"order_id":1,"status":"completed"}`))
+	}))
+	defer server.Close()
+	repo := &siteConnectionRepoStub{}
+	service := siteconnectionapp.NewService(repo, "test-key", t.TempDir())
+	conn, err := service.Create(siteconnectionapp.CreateInput{Name: "CardNet", BaseURL: server.URL, ApiKey: t.Name(), ApiSecret: "secret", Protocol: constants.ConnectionProtocolCardNetV2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	adapter, err := service.GetAdapter(conn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := adapter.GetOrder(context.Background(), 1); err == nil {
+		t.Fatal("expected forbidden")
+	}
+	if !repo.conn.AuthenticationPaused || repo.conn.Status != constants.ConnectionStatusDisabled {
+		t.Fatalf("pause not persisted: %+v", repo.conn)
+	}
+	service = siteconnectionapp.NewService(repo, "test-key", t.TempDir())
+	other, err := service.GetAdapter(repo.conn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := other.GetOrder(context.Background(), 1); !errors.Is(err, upstream.ErrAuthenticationPaused) {
+		t.Fatalf("pause lost: %v", err)
+	}
+	if err := service.SetStatus(conn.ID, constants.ConnectionStatusActive); !errors.Is(err, siteconnectioncontract.ErrAuthenticationPaused) {
+		t.Fatalf("status change bypassed ping: %v", err)
+	}
+	if calls.Load() != 1 {
+		t.Fatal("paused connection contacted upstream")
+	}
+	unauthorized.Store(false)
+	if _, err := service.Ping(conn.ID); err != nil {
+		t.Fatal(err)
+	}
+	if repo.conn.AuthenticationPaused || repo.conn.Status != constants.ConnectionStatusActive {
+		t.Fatal("ping did not recover connection")
+	}
+	if _, err := adapter.GetOrder(context.Background(), 1); err != nil {
+		t.Fatalf("existing adapter did not recover: %v", err)
+	}
+	if calls.Load() != 3 {
+		t.Fatalf("calls=%d", calls.Load())
 	}
 }
 
@@ -135,6 +204,27 @@ func (r *siteConnectionRepoStub) Update(conn *siteconnectiondomain.Connection) e
 	r.updated = true
 	copy := *conn
 	r.conn = &copy
+	return nil
+}
+
+func (r *siteConnectionRepoStub) UpdateAuthenticationState(conn *siteconnectiondomain.Connection, paused bool) (bool, error) {
+	if r.conn == nil || r.conn.ApiKey != conn.ApiKey || r.conn.ApiSecret != conn.ApiSecret || r.conn.BaseURL != conn.BaseURL {
+		return false, nil
+	}
+	r.conn.AuthenticationPaused = paused
+	r.conn.LastPingOK = !paused
+	if paused {
+		r.conn.Status = constants.ConnectionStatusDisabled
+	} else if conn.AuthenticationPaused || conn.Status == constants.ConnectionStatusPending {
+		r.conn.Status = constants.ConnectionStatusActive
+	}
+	return true, nil
+}
+
+func (r *siteConnectionRepoStub) RecordPingFailure(conn *siteconnectiondomain.Connection) error {
+	if r.conn != nil && r.conn.ApiSecret == conn.ApiSecret && r.conn.ApiKey == conn.ApiKey {
+		r.conn.LastPingOK = false
+	}
 	return nil
 }
 

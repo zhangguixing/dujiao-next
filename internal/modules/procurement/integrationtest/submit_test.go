@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
 
@@ -15,6 +16,62 @@ import (
 	procurementcontract "github.com/dujiao-next/internal/modules/procurement/contract"
 	siteconnectionapp "github.com/dujiao-next/internal/modules/siteconnection/application"
 )
+
+func TestSubmitCardNetUsesHTTPPolicyAndRetryAfter(t *testing.T) {
+	for _, tc := range []struct {
+		code       string
+		httpStatus int
+		wantStatus string
+	}{
+		{"authentication_failed", 401, constants.ProcurementStatusRejected},
+		{"wallet_order_not_enabled", 403, constants.ProcurementStatusRejected},
+		{"idempotency_conflict", 409, constants.ProcurementStatusRejected},
+		{"insufficient_stock", 409, constants.ProcurementStatusRejected},
+		{"", 400, constants.ProcurementStatusRejected},
+		{"rate_limited", 429, constants.ProcurementStatusFailed},
+		{"service_unavailable", 503, constants.ProcurementStatusFailed},
+	} {
+		t.Run(tc.code+http.StatusText(tc.httpStatus), func(t *testing.T) {
+			db := setupProcurementTestDB(t)
+			order := createProcTestOrder(t, db, "CARDNET-POLICY", constants.OrderStatusPaid, constants.FulfillmentTypeUpstream)
+			pm := &mappingdomain.Mapping{ConnectionID: 1, LocalProductID: 1, UpstreamProductID: 101, IsActive: true}
+			if err := db.Create(pm).Error; err != nil {
+				t.Fatal(err)
+			}
+			if err := db.Create(&mappingdomain.SKUMapping{ProductMappingID: pm.ID, LocalSKUID: 1, UpstreamSKUID: 201, UpstreamIsActive: true}).Error; err != nil {
+				t.Fatal(err)
+			}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Retry-After", "90")
+				w.WriteHeader(tc.httpStatus)
+				_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error_code": tc.code})
+			}))
+			defer server.Close()
+			connSvc := newTestSiteConnectionService(db, "test-key", t.TempDir())
+			conn, err := connSvc.Create(siteconnectionapp.CreateInput{Name: "CardNet", BaseURL: server.URL, ApiKey: t.Name(), ApiSecret: "secret", Protocol: constants.ConnectionProtocolCardNetV2})
+			if err != nil {
+				t.Fatal(err)
+			}
+			proc := createTestProcurementOrder(t, db, conn.ID, order.ID, order.OrderNo, "pending")
+			started := time.Now()
+			_ = newTestProcurementService(db, connSvc).SubmitToUpstream(proc.ID)
+			var updated ProcurementOrder
+			if err := db.First(&updated, proc.ID).Error; err != nil {
+				t.Fatal(err)
+			}
+			if updated.Status != tc.wantStatus {
+				t.Fatalf("status=%s expected=%s", updated.Status, tc.wantStatus)
+			}
+			if tc.wantStatus == constants.ProcurementStatusFailed {
+				if updated.NextRetryAt == nil || updated.NextRetryAt.Before(started.Add(90*time.Second)) {
+					t.Fatalf("Retry-After lost: %v", updated.NextRetryAt)
+				}
+			} else if updated.RetryCount != 0 {
+				t.Fatalf("terminal rejection was retried: %d", updated.RetryCount)
+			}
+		})
+	}
+}
 
 // ── SubmitToUpstream tests ──
 

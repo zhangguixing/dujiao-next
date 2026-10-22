@@ -368,6 +368,29 @@ func (s *Service) EnsureUpstreamStockForOrder(localSKUID uint, requiredQty int) 
 	if s == nil || s.skuMappings == nil || localSKUID == 0 || requiredQty <= 0 {
 		return nil
 	}
+	// Protocol purchase limits apply even when optional realtime stock checks
+	// are disabled, or a mapped SKU has unlimited/sufficient cached stock.
+	if requiredQty > upstream.CardNetMaxOrderQuantity {
+		skuMapping, err := s.skuMappings.GetByLocalSKUID(localSKUID)
+		if err != nil {
+			return err
+		}
+		if skuMapping != nil {
+			mapping, err := s.mappings.GetByID(skuMapping.ProductMappingID)
+			if err != nil {
+				return err
+			}
+			if mapping != nil {
+				conn, err := s.connections.GetByID(mapping.ConnectionID)
+				if err != nil {
+					return err
+				}
+				if conn != nil && conn.Protocol == constants.ConnectionProtocolCardNetV2 {
+					return productdomain.ErrMaxPurchaseExceeded
+				}
+			}
+		}
+	}
 
 	// 后台总开关
 	if s.settings != nil {

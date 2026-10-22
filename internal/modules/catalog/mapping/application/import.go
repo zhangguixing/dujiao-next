@@ -184,6 +184,9 @@ func (s *Service) importUpstreamProduct(connectionID uint, upstreamProductID uin
 		IsActive:             false, // 默认下架，管理员手动上架
 		SortOrder:            0,
 	}
+	if conn.Protocol == constants.ConnectionProtocolCardNetV2 {
+		product.MaxPurchaseQuantity = upstream.CardNetMaxOrderQuantity
+	}
 
 	var mapping *mappingdomain.Mapping
 

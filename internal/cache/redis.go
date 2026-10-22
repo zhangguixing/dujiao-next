@@ -64,6 +64,18 @@ func Client() *redis.Client {
 	return redisClient
 }
 
+// Eval executes an atomic cache operation using the configured key namespace.
+func Eval(ctx context.Context, script string, keys []string, args ...interface{}) (interface{}, error) {
+	if !Enabled() {
+		return nil, ErrUnavailable
+	}
+	prefixed := make([]string, len(keys))
+	for i, key := range keys {
+		prefixed[i] = buildKey(key)
+	}
+	return redisClient.Eval(ctx, script, prefixed, args...).Result()
+}
+
 // GetJSON 获取 JSON 缓存
 func GetJSON(ctx context.Context, key string, dest interface{}) (bool, error) {
 	if !Enabled() {

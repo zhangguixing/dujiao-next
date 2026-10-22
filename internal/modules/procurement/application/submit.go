@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"strconv"
@@ -91,16 +92,19 @@ func (s *Service) SubmitToUpstream(procurementOrderID uint) error {
 
 	resp, err := connection.CreateOrder(ctx, req)
 	if err != nil {
-		return s.handleSubmitFailure(procOrder, connection, fmt.Sprintf("upstream request error: %v", err), true)
+		return s.handleSubmitFailure(procOrder, connection, fmt.Sprintf("upstream request error: %v", err), isRetryableErrorCode("", err))
 	}
 
 	if !resp.OK {
 		retryable := isRetryableErrorCode(resp.ErrorCode)
+		if resp.Retryable != nil {
+			retryable = *resp.Retryable
+		}
 		errMsg := resp.ErrorMessage
 		if errMsg == "" {
 			errMsg = resp.ErrorCode
 		}
-		return s.handleSubmitFailure(procOrder, connection, errMsg, retryable)
+		return s.handleSubmitFailure(procOrder, connection, errMsg, retryable, resp.RetryAfter)
 	}
 
 	// 成功：更新状态，重置 retry_count 用于轮询阶段
@@ -234,7 +238,7 @@ func (s *Service) notifyProcurementFailure(procOrder *procurementdomain.Order, e
 }
 
 // handleSubmitFailure 处理提交失败
-func (s *Service) handleSubmitFailure(procOrder *procurementdomain.Order, connection procurementcontract.UpstreamConnection, errMsg string, retryable bool) error {
+func (s *Service) handleSubmitFailure(procOrder *procurementdomain.Order, connection procurementcontract.UpstreamConnection, errMsg string, retryable bool, minimumDelay ...time.Duration) error {
 	now := time.Now()
 
 	if retryable && procOrder.RetryCount < connection.RetryMax() {
@@ -244,6 +248,11 @@ func (s *Service) handleSubmitFailure(procOrder *procurementdomain.Order, connec
 			idx = len(intervals) - 1
 		}
 		delay := intervals[idx]
+		for _, minimum := range minimumDelay {
+			if minimum > delay {
+				delay = minimum
+			}
+		}
 		nextRetry := now.Add(delay)
 
 		updates := map[string]interface{}{
@@ -302,17 +311,35 @@ func (s *Service) handleSubmitFailure(procOrder *procurementdomain.Order, connec
 }
 
 // isRetryableErrorCode 判断上游错误码是否可重试
-func isRetryableErrorCode(code string) bool {
+func isRetryableErrorCode(code string, requestErrors ...error) bool {
+	for _, err := range requestErrors {
+		var classified interface{ Retryable() bool }
+		if errors.As(err, &classified) {
+			return classified.Retryable()
+		}
+	}
 	nonRetryable := map[string]bool{
-		"insufficient_balance": true,
-		"payment_failed":       true,
-		"product_unavailable":  true,
-		"sku_unavailable":      true,
-		"invalid_request":      true,
-		"unauthorized":         true,
-		"forbidden":            true,
-		"duplicate_order":      true,
-		"product_out_of_stock": true,
+		"insufficient_balance":       true,
+		"payment_failed":             true,
+		"product_unavailable":        true,
+		"sku_unavailable":            true,
+		"invalid_request":            true,
+		"unauthorized":               true,
+		"forbidden":                  true,
+		"duplicate_order":            true,
+		"product_out_of_stock":       true,
+		"authentication_failed":      true,
+		"credential_paused":          true,
+		"wallet_order_not_enabled":   true,
+		"member_level_required":      true,
+		"idempotency_conflict":       true,
+		"insufficient_stock":         true,
+		"product_not_supported":      true,
+		"payment_mode_not_supported": true,
+		"callback_not_supported":     true,
+		"bad_request":                true,
+		"product_not_found":          true,
+		"order_not_found":            true,
 	}
 	return !nonRetryable[strings.ToLower(strings.TrimSpace(code))]
 }

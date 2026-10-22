@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/dujiao-next/internal/constants"
+
 	siteconnectioncontract "github.com/dujiao-next/internal/modules/siteconnection/contract"
 	siteconnectiondomain "github.com/dujiao-next/internal/modules/siteconnection/domain"
 
@@ -53,7 +55,26 @@ func (r *Store) Create(conn *siteconnectiondomain.Connection) error {
 
 // Update 更新连接
 func (r *Store) Update(conn *siteconnectiondomain.Connection) error {
-	return r.db.Save(conn).Error
+	return r.db.Omit("AuthenticationPaused").Save(conn).Error
+}
+
+func (r *Store) UpdateAuthenticationState(conn *siteconnectiondomain.Connection, paused bool) (bool, error) {
+	status := conn.Status
+	if paused {
+		status = constants.ConnectionStatusDisabled
+	} else if conn.AuthenticationPaused || status == constants.ConnectionStatusPending {
+		status = constants.ConnectionStatusActive
+	}
+	result := r.db.Model(&siteconnectiondomain.Connection{}).
+		Where("id = ? AND deleted_at IS NULL AND api_key = ? AND api_secret = ? AND base_url = ? AND protocol = ?", conn.ID, conn.ApiKey, conn.ApiSecret, conn.BaseURL, conn.Protocol).
+		Updates(map[string]interface{}{"authentication_paused": paused, "last_ping_ok": !paused, "last_ping_at": time.Now(), "status": status})
+	return result.RowsAffected != 0, result.Error
+}
+
+func (r *Store) RecordPingFailure(conn *siteconnectiondomain.Connection) error {
+	return r.db.Model(&siteconnectiondomain.Connection{}).
+		Where("id = ? AND deleted_at IS NULL AND api_key = ? AND api_secret = ? AND base_url = ? AND protocol = ?", conn.ID, conn.ApiKey, conn.ApiSecret, conn.BaseURL, conn.Protocol).
+		Updates(map[string]interface{}{"last_ping_ok": false, "last_ping_at": time.Now()}).Error
 }
 
 // Delete 软删除连接

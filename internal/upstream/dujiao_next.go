@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,18 @@ type upstreamHTTPError struct {
 	Code    string
 	Message string
 	Body    string
+	CardNet bool
+	Delay   time.Duration
+}
+
+func (e *upstreamHTTPError) Retryable() bool {
+	return !e.CardNet || e.Status == http.StatusTooManyRequests || e.Status >= 500 || e.Code == "replay_detected"
+}
+
+func (e *upstreamHTTPError) RetryAfter() time.Duration { return e.Delay }
+
+func (e *upstreamHTTPError) Is(target error) bool {
+	return target == ErrAuthenticationPaused && e.CardNet && (e.Status == http.StatusUnauthorized || e.Status == http.StatusForbidden)
 }
 
 func (e *upstreamHTTPError) Error() string {
@@ -48,12 +61,14 @@ func extractUpstreamErrorCode(err error) string {
 
 // DujiaoNextAdapter Dujiao-Next 协议适配器
 type DujiaoNextAdapter struct {
-	baseURL    string
-	apiKey     string
-	apiSecret  string
-	uploadsDir string
-	client     *http.Client
-	cardNetV2  bool
+	baseURL              string
+	apiKey               string
+	apiSecret            string
+	uploadsDir           string
+	client               *http.Client
+	cardNetV2            bool
+	beforeRequest        func() error
+	authenticationFailed func() error
 }
 
 // NewDujiaoNextAdapter 创建 Dujiao-Next 适配器
@@ -103,13 +118,17 @@ func (a *DujiaoNextAdapter) ListCategories(ctx context.Context) (*CategoryListRe
 
 // ListProducts 拉取上游商品列表
 func (a *DujiaoNextAdapter) ListProducts(ctx context.Context, opts ListProductsOpts) (*ProductListResult, error) {
-	path := fmt.Sprintf("/api/v1/upstream/products?page=%d&page_size=%d", opts.Page, opts.PageSize)
+	if a.cardNetV2 && (opts.PageSize <= 0 || opts.PageSize > 50) {
+		opts.PageSize = 50
+	}
+	query := url.Values{"page": {strconv.Itoa(opts.Page)}, "page_size": {strconv.Itoa(opts.PageSize)}}
 	if opts.UpdatedAfter != nil {
-		path += "&updated_after=" + opts.UpdatedAfter.Format(time.RFC3339)
+		query.Set("updated_after", opts.UpdatedAfter.Format(time.RFC3339))
 	}
 	if opts.IncludeInactive {
-		path += "&include_inactive=true"
+		query.Set("include_inactive", "true")
 	}
+	path := "/api/v1/upstream/products?" + query.Encode()
 	var result ProductListResult
 	if err := a.doRequest(ctx, http.MethodGet, path, nil, &result); err != nil {
 		return nil, err
@@ -147,8 +166,16 @@ func (a *DujiaoNextAdapter) CreateOrder(ctx context.Context, req CreateUpstreamO
 		// 上游明确拒绝（非 200 且带错误码，如 insufficient_balance）按业务失败返回，
 		// 由调用方按错误码决定是否重试；网络/超时等无错误码的错误仍按错误返回。
 		var ue *upstreamHTTPError
-		if errors.As(err, &ue) && ue.Code != "" {
-			return &CreateUpstreamOrderResp{OK: false, ErrorCode: ue.Code, ErrorMessage: ue.Message}, nil
+		if errors.As(err, &ue) && (ue.Code != "" || a.cardNetV2) {
+			result := &CreateUpstreamOrderResp{OK: false, ErrorCode: ue.Code, ErrorMessage: ue.Message}
+			if a.cardNetV2 {
+				if result.ErrorCode == "" {
+					result.ErrorCode = fmt.Sprintf("http_%d", ue.Status)
+				}
+				retryable := ue.Retryable()
+				result.Retryable, result.RetryAfter = &retryable, ue.Delay
+			}
+			return result, nil
 		}
 		return nil, err
 	}
@@ -272,6 +299,24 @@ func (a *DujiaoNextAdapter) doRequest(ctx context.Context, method, path string, 
 			return fmt.Errorf("marshal request body: %w", err)
 		}
 	}
+	if a.cardNetV2 {
+		manual, _ := ctx.Value(cardNetManualPingKey{}).(bool)
+		if !manual && a.beforeRequest != nil {
+			if err := a.beforeRequest(); err != nil {
+				return err
+			}
+		}
+		release, err := acquireCardNetRequest(ctx, a.baseURL, a.apiKey, method)
+		if err != nil {
+			return err
+		}
+		defer release()
+		if !manual && a.beforeRequest != nil {
+			if err := a.beforeRequest(); err != nil {
+				return err
+			}
+		}
+	}
 
 	// 签名用的 path 不含 query string
 	signPath := path
@@ -323,18 +368,47 @@ func (a *DujiaoNextAdapter) doRequest(ctx context.Context, method, path string, 
 	if resp.StatusCode != http.StatusOK {
 		logger.Warnw("upstream_request_error",
 			"method", method, "path", path,
-			"status", resp.StatusCode, "body", string(respBody))
+			"status", resp.StatusCode)
 		// 尝试解析结构化错误响应
 		var errPayload struct {
 			ErrorCode    string `json:"error_code"`
 			ErrorMessage string `json:"error_message"`
 		}
 		_ = json.Unmarshal(respBody, &errPayload)
+		delay := time.Duration(0)
+		if a.cardNetV2 {
+			delay = cardNetRetryAfter(resp.Header.Get("Retry-After"), time.Now())
+			if resp.StatusCode == http.StatusTooManyRequests && delay < 30*time.Second {
+				delay = 30 * time.Second
+			}
+			if resp.StatusCode == http.StatusServiceUnavailable && delay < time.Second {
+				delay = time.Second
+			}
+			if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
+				deferCardNetRequests(ctx, a.baseURL, a.apiKey, delay)
+			}
+			if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+				if a.authenticationFailed != nil {
+					if err := a.authenticationFailed(); err != nil {
+						pauseCardNetRequests(a.baseURL, a.apiKey)
+						return fmt.Errorf("persist upstream authentication pause: %w", err)
+					}
+				} else {
+					pauseCardNetRequests(a.baseURL, a.apiKey)
+				}
+			}
+		}
+		message, responseBody := errPayload.ErrorMessage, string(respBody)
+		if a.cardNetV2 {
+			message, responseBody = errPayload.ErrorCode, ""
+		}
 		return &upstreamHTTPError{
 			Status:  resp.StatusCode,
 			Code:    errPayload.ErrorCode,
-			Message: errPayload.ErrorMessage,
-			Body:    string(respBody),
+			Message: message,
+			Body:    responseBody,
+			CardNet: a.cardNetV2,
+			Delay:   delay,
 		}
 	}
 

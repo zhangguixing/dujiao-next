@@ -57,6 +57,9 @@ func (s *Service) PollUpstreamStatus(procurementOrderID uint) error {
 			"error", err,
 		)
 		// 轮询失败，重新入队
+		if !isRetryableErrorCode("", err) {
+			return nil
+		}
 		return s.requeuePoll(procOrder)
 	}
 

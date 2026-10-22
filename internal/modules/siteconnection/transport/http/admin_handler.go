@@ -165,6 +165,10 @@ func (h *AdminHandler) PingSiteConnection(c *gin.Context) {
 
 	result, err := h.connections.Ping(id)
 	if err != nil {
+		if errors.Is(err, siteconnectioncontract.ErrAuthenticationPaused) {
+			ginutil.RespondError(c, response.CodeBadRequest, "error.upstream_authentication_paused", nil)
+			return
+		}
 		if errors.Is(err, siteconnectioncontract.ErrNotFound) {
 			ginutil.RespondError(c, response.CodeNotFound, "error.connection_not_found", nil)
 			return
@@ -212,6 +216,10 @@ func (h *AdminHandler) UpdateSiteConnectionStatus(c *gin.Context) {
 	}
 
 	if err := h.connections.SetStatus(id, req.Status); err != nil {
+		if errors.Is(err, siteconnectioncontract.ErrAuthenticationPaused) {
+			ginutil.RespondError(c, response.CodeBadRequest, "error.upstream_authentication_paused", nil)
+			return
+		}
 		if errors.Is(err, siteconnectioncontract.ErrNotFound) {
 			ginutil.RespondError(c, response.CodeNotFound, "error.connection_not_found", nil)
 			return

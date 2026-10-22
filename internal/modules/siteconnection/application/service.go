@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -209,6 +210,9 @@ func (s *Service) SetStatus(id uint, status string) error {
 	if conn == nil {
 		return siteconnectioncontract.ErrNotFound
 	}
+	if conn.Protocol == constants.ConnectionProtocolCardNetV2 && conn.AuthenticationPaused && status == constants.ConnectionStatusActive {
+		return siteconnectioncontract.ErrAuthenticationPaused
+	}
 	conn.Status = status
 	return s.connRepo.Update(conn)
 }
@@ -223,18 +227,7 @@ func (s *Service) Ping(id uint) (*PingResult, error) {
 		return nil, siteconnectioncontract.ErrNotFound
 	}
 
-	// 解密 secret
-	decrypted, err := s.decryptSecret(conn)
-	if err != nil {
-		return nil, err
-	}
-
-	adapter, err := upstream.NewAdapter(&siteconnectiondomain.Connection{
-		BaseURL:   conn.BaseURL,
-		ApiKey:    conn.ApiKey,
-		ApiSecret: decrypted,
-		Protocol:  conn.Protocol,
-	}, s.uploadsDir)
+	adapter, err := s.GetAdapter(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -243,18 +236,35 @@ func (s *Service) Ping(id uint) (*PingResult, error) {
 	defer cancel()
 
 	result, pingErr := adapter.Ping(ctx)
+	if cardNet, ok := adapter.(*upstream.CardNetV2Adapter); ok && pingErr == nil {
+		updated, err := s.connRepo.UpdateAuthenticationState(conn, false)
+		if err != nil {
+			return nil, err
+		}
+		if !updated {
+			return nil, siteconnectioncontract.ErrAuthenticationPaused
+		}
+		cardNet.ResumeRequests()
+	}
 	now := time.Now()
 	conn.LastPingAt = &now
 	conn.LastPingOK = pingErr == nil
 
-	if pingErr == nil && conn.Status == constants.ConnectionStatusPending {
+	if pingErr == nil && (conn.Status == constants.ConnectionStatusPending || conn.AuthenticationPaused) {
 		conn.Status = constants.ConnectionStatusActive
 	}
 
 	// 更新连接状态（不管 ping 是否成功）
-	_ = s.connRepo.Update(conn)
+	if conn.Protocol != constants.ConnectionProtocolCardNetV2 {
+		_ = s.connRepo.Update(conn)
+	} else if pingErr != nil && !errors.Is(pingErr, upstream.ErrAuthenticationPaused) {
+		_ = s.connRepo.RecordPingFailure(conn)
+	}
 
 	if pingErr != nil {
+		if errors.Is(pingErr, upstream.ErrAuthenticationPaused) {
+			return nil, siteconnectioncontract.ErrAuthenticationPaused
+		}
 		return nil, pingErr
 	}
 	if result == nil {
@@ -277,12 +287,34 @@ func (s *Service) GetAdapter(conn *siteconnectiondomain.Connection) (upstream.Ad
 		return nil, err
 	}
 
-	return upstream.NewAdapter(&siteconnectiondomain.Connection{
+	adapter, err := upstream.NewAdapter(&siteconnectiondomain.Connection{
 		BaseURL:   conn.BaseURL,
 		ApiKey:    conn.ApiKey,
 		ApiSecret: decrypted,
 		Protocol:  conn.Protocol,
 	}, s.uploadsDir)
+	if err != nil {
+		return nil, err
+	}
+	if cardNet, ok := adapter.(*upstream.CardNetV2Adapter); ok {
+		cardNet.SetAuthenticationGuard(func() error {
+			current, err := s.connRepo.GetByID(conn.ID)
+			if err != nil {
+				return err
+			}
+			if current == nil || current.AuthenticationPaused || current.ApiKey != conn.ApiKey || current.ApiSecret != conn.ApiSecret || current.BaseURL != conn.BaseURL || current.Protocol != conn.Protocol {
+				return upstream.AuthenticationPausedError()
+			}
+			return nil
+		}, func() error {
+			updated, err := s.connRepo.UpdateAuthenticationState(conn, true)
+			if updated {
+				logger.Warnw("cardnet_authentication_paused", "connection_id", conn.ID)
+			}
+			return err
+		})
+	}
+	return adapter, nil
 }
 
 func (s *Service) decryptSecret(conn *siteconnectiondomain.Connection) (string, error) {

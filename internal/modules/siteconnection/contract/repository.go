@@ -15,6 +15,9 @@ type Repository interface {
 	GetByApiKey(apiKey string) (*siteconnectiondomain.Connection, error)
 	Create(conn *siteconnectiondomain.Connection) error
 	Update(conn *siteconnectiondomain.Connection) error
+	// UpdateAuthenticationState changes only the credentials that were tested.
+	UpdateAuthenticationState(conn *siteconnectiondomain.Connection, paused bool) (bool, error)
+	RecordPingFailure(conn *siteconnectiondomain.Connection) error
 	Delete(id uint) error
 	List(filter ListFilter) ([]siteconnectiondomain.Connection, int64, error)
 	ListActive() ([]siteconnectiondomain.Connection, error)

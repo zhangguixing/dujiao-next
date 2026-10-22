@@ -45,6 +45,8 @@ type CreateOrderResult struct {
 	Currency     string
 	ErrorCode    string
 	ErrorMessage string
+	Retryable    *bool
+	RetryAfter   time.Duration
 }
 
 type UpstreamOrder struct {

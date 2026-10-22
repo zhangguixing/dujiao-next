@@ -27,6 +27,54 @@ func setupSiteConnectionStoreTest(t *testing.T) (*gorm.DB, *Store) {
 	return db, New(db)
 }
 
+func TestAuthenticationPauseDoesNotOverwriteRotatedCredentials(t *testing.T) {
+	_, store := setupSiteConnectionStoreTest(t)
+	conn := &siteconnectiondomain.Connection{Name: "CardNet", BaseURL: "https://example.com", ApiKey: "key", ApiSecret: "old-secret", Protocol: constants.ConnectionProtocolCardNetV2, Status: constants.ConnectionStatusActive}
+	if err := store.Create(conn); err != nil {
+		t.Fatal(err)
+	}
+	stale := *conn
+	conn.ApiSecret = "new-secret"
+	if err := store.Update(conn); err != nil {
+		t.Fatal(err)
+	}
+	if updated, err := store.UpdateAuthenticationState(&stale, true); err != nil || updated {
+		t.Fatalf("stale pause updated=%v err=%v", updated, err)
+	}
+	if updated, err := store.UpdateAuthenticationState(conn, true); err != nil || !updated {
+		t.Fatalf("pause updated=%v err=%v", updated, err)
+	}
+	// A concurrent settings save must not clear the persisted security pause.
+	conn.Name = "renamed"
+	if err := store.Update(conn); err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := store.GetByID(conn.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !persisted.AuthenticationPaused || persisted.ApiSecret != "new-secret" {
+		t.Fatalf("pause or credentials lost: %+v", persisted)
+	}
+	if err := store.RecordPingFailure(&stale); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RecordPingFailure(persisted); err != nil {
+		t.Fatal(err)
+	}
+	persisted, err = store.GetByID(conn.ID)
+	if err != nil || !persisted.AuthenticationPaused {
+		t.Fatalf("failed ping cleared pause: %+v, %v", persisted, err)
+	}
+	if updated, err := store.UpdateAuthenticationState(persisted, false); err != nil || !updated {
+		t.Fatalf("recover updated=%v err=%v", updated, err)
+	}
+	persisted, err = store.GetByID(conn.ID)
+	if err != nil || persisted.AuthenticationPaused || persisted.Status != constants.ConnectionStatusActive {
+		t.Fatalf("recovery=%+v err=%v", persisted, err)
+	}
+}
+
 func TestStoreDeleteHidesConnectionFromEveryReadPath(t *testing.T) {
 	db, store := setupSiteConnectionStoreTest(t)
 	connection := &siteconnectiondomain.Connection{

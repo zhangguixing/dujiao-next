@@ -117,14 +117,16 @@ type CreateUpstreamOrderReq struct {
 
 // CreateUpstreamOrderResp 创建上游采购单响应
 type CreateUpstreamOrderResp struct {
-	OK           bool   `json:"ok"`
-	OrderID      uint   `json:"order_id,omitempty"`
-	OrderNo      string `json:"order_no,omitempty"`
-	Status       string `json:"status,omitempty"`
-	Amount       string `json:"amount,omitempty"`
-	Currency     string `json:"currency,omitempty"`
-	ErrorCode    string `json:"error_code,omitempty"`
-	ErrorMessage string `json:"error_message,omitempty"`
+	OK           bool          `json:"ok"`
+	OrderID      uint          `json:"order_id,omitempty"`
+	OrderNo      string        `json:"order_no,omitempty"`
+	Status       string        `json:"status,omitempty"`
+	Amount       string        `json:"amount,omitempty"`
+	Currency     string        `json:"currency,omitempty"`
+	ErrorCode    string        `json:"error_code,omitempty"`
+	ErrorMessage string        `json:"error_message,omitempty"`
+	Retryable    *bool         `json:"-"`
+	RetryAfter   time.Duration `json:"-"`
 }
 
 // UpstreamFulfillment 上游交付信息
