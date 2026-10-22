@@ -398,6 +398,7 @@ const (
 	TaskWalletRechargeExpire        = "wallet_recharge:timeout_expire"
 	TaskNotificationDispatch        = "notification:dispatch"
 	TaskAffiliateConfirmCommissions = "affiliate:confirm_commissions"
+	TaskAffiliateOrderPaid          = "affiliate:order_paid"
 	TaskResellerConfirmLedger       = "reseller:confirm_ledger"
 	TaskProcurementSubmit           = "procurement:submit"
 	TaskProcurementPollStatus       = "procurement:poll_status"
@@ -512,6 +513,7 @@ const (
 	SettingFieldEmailVerificationEnabled    = "email_verification_enabled"
 	SettingFieldEmailDomainAllowlistEnabled = "email_domain_allowlist_enabled"
 	SettingFieldAllowedEmailDomains         = "allowed_email_domains"
+	SettingFieldRegistrationInviteOnly      = "invite_only_enabled"
 
 	SettingKeyOrderRiskControlConfig = "order_risk_control_config"
 
