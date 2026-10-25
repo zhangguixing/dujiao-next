@@ -1738,5 +1738,31 @@
     "label": "购买身份",
     "member": "会员购买",
     "guest": "游客可购"
+  },
+  "storefrontThemes": {
+    "mint": {
+      "eyebrow": "数字好物，轻松发现",
+      "title": "给数字生活，",
+      "highlight": "一点新鲜感。",
+      "description": "从实用工具到日常所需，找到适合你的数字商品。",
+      "objectLabel": "数字精选",
+      "collection": "好物陈列"
+    },
+    "paper": {
+      "eyebrow": "一间数字选物商店",
+      "title": "用心挑选，",
+      "highlight": "恰好所需。",
+      "description": "把需要的工具与服务，收进你的日常。慢慢浏览，认真选择。",
+      "indexLabel": "店内索引",
+      "collection": "本期选物"
+    },
+    "mono": {
+      "eyebrow": "为你的下一个想法",
+      "title": "数字装备，",
+      "highlight": "即刻就位。",
+      "description": "浏览数字商品与服务，为创作、工作和日常找到合适的工具。",
+      "objectLabel": "数字空间",
+      "collection": "探索商品"
+    }
   }
 }

@@ -1,5 +1,5 @@
 <template>
-  <RouterLink :to="`/products/${product.slug}`" class="flex h-full flex-col gap-2.5 rounded-lg border bg-card p-3 text-left transition hover:-translate-y-[3px] hover:border-hairline-strong hover:shadow-[var(--shadow)]" :class="{ 'opacity-[0.74]': soldOut }">
+  <RouterLink :to="`/products/${product.slug}`" class="storefront-product-card flex h-full flex-col gap-2.5 rounded-lg border bg-card p-3 text-left transition hover:-translate-y-[3px] hover:border-hairline-strong hover:shadow-[var(--shadow)]" :class="{ 'opacity-[0.74]': soldOut }">
     <div class="flex flex-col items-stretch gap-[11px]">
       <span
         class="relative grid h-[152px] w-full flex-none place-items-center overflow-hidden rounded-[13px] will-change-transform after:absolute after:inset-0 after:bg-[radial-gradient(130%_80%_at_78%_14%,rgba(255,255,255,0.26),transparent_56%)]"

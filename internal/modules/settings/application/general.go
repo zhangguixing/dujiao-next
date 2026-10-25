@@ -100,6 +100,8 @@ func (s *Service) GetConfig(defaults map[string]interface{}) (map[string]interfa
 	for k, v := range value {
 		data[k] = v
 	}
+	// 已下线或未知的历史主题在读取时回退，不要求先重新保存设置。
+	data[constants.SettingFieldStorefrontTemplate] = normalizeStorefrontTemplate(data[constants.SettingFieldStorefrontTemplate])
 	return data, nil
 }
 

@@ -44,6 +44,9 @@ type SiteScriptItem = {
   code: string
 }
 
+const storefrontOptions = ['classic', 'vault', 'mint', 'paper', 'mono'] as const
+type StorefrontTemplate = (typeof storefrontOptions)[number]
+
 const siteScriptsMaxCount = 20
 const footerLinksMaxCount = 20
 
@@ -220,7 +223,7 @@ const form = reactive({
   },
   scripts: [] as SiteScriptItem[],
   footer_links: [] as FooterLinkItem[],
-  storefront_template: 'classic' as 'classic' | 'vault',
+  storefront_template: 'classic' as StorefrontTemplate,
   template_mode: 'card' as 'card' | 'list',
 })
 
@@ -459,7 +462,7 @@ const fetchSettings = async () => {
       form.template_mode = rawTemplateMode === 'list' ? 'list' : 'card'
 
       const rawStorefrontTemplate = String(data.storefront_template || 'classic').trim()
-      form.storefront_template = rawStorefrontTemplate === 'vault' ? 'vault' : 'classic'
+      form.storefront_template = storefrontOptions.includes(rawStorefrontTemplate as StorefrontTemplate) ? rawStorefrontTemplate as StorefrontTemplate : 'classic'
     }
 
     if (orderRes.data && orderRes.data.data) {
@@ -1150,56 +1153,24 @@ onMounted(() => {
           </div>
         </div>
         <div class="px-6 py-6">
-          <RadioGroup v-model="form.storefront_template" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Classic -->
+          <RadioGroup v-model="form.storefront_template" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <Label
-              class="relative flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 p-6 transition-all"
-              :class="form.storefront_template === 'classic'
-                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                : 'border-border hover:border-muted-foreground/30'"
+              v-for="option in storefrontOptions"
+              :key="option"
+              class="relative flex cursor-pointer flex-col gap-4 rounded-xl border-2 p-4 transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+              :class="form.storefront_template === option ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'"
             >
-              <RadioGroupItem value="classic" class="sr-only" />
-              <div class="flex h-16 w-16 items-center justify-center rounded-xl" :class="form.storefront_template === 'classic' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'">
-                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                  <circle cx="12" cy="12" r="4" />
-                  <path stroke-linecap="round" d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" />
-                </svg>
+              <RadioGroupItem :value="option" class="sr-only" />
+              <div class="theme-swatch" :class="`theme-swatch--${option}`" aria-hidden="true">
+                <div class="theme-swatch-nav"><i></i><i></i><i></i></div>
+                <div class="theme-swatch-hero"><span></span><b></b></div>
+                <div class="theme-swatch-grid"><i></i><i></i><i></i></div>
               </div>
-              <div class="text-center">
-                <div class="font-semibold" :class="form.storefront_template === 'classic' ? 'text-primary' : ''">{{ t('admin.settings.template.classicMode') }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">{{ t('admin.settings.template.classicModeDesc') }}</div>
+              <div>
+                <div class="font-semibold">{{ t(`admin.settings.template.${option}Mode`) }}</div>
+                <p class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ t(`admin.settings.template.${option}ModeDesc`) }}</p>
               </div>
-              <div v-if="form.storefront_template === 'classic'" class="absolute right-3 top-3">
-                <svg class="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-              </div>
-            </Label>
-
-            <!-- Vault -->
-            <Label
-              class="relative flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 p-6 transition-all"
-              :class="form.storefront_template === 'vault'
-                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                : 'border-border hover:border-muted-foreground/30'"
-            >
-              <RadioGroupItem value="vault" class="sr-only" />
-              <div class="flex h-16 w-16 items-center justify-center rounded-xl" :class="form.storefront_template === 'vault' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'">
-                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6l7-3z" />
-                  <circle cx="12" cy="11" r="2.2" />
-                  <path stroke-linecap="round" d="M12 13.2V16" />
-                </svg>
-              </div>
-              <div class="text-center">
-                <div class="font-semibold" :class="form.storefront_template === 'vault' ? 'text-primary' : ''">{{ t('admin.settings.template.vaultMode') }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">{{ t('admin.settings.template.vaultModeDesc') }}</div>
-              </div>
-              <div v-if="form.storefront_template === 'vault'" class="absolute right-3 top-3">
-                <svg class="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-              </div>
+              <span v-if="form.storefront_template === option" class="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground" aria-hidden="true">✓</span>
             </Label>
           </RadioGroup>
         </div>
@@ -1579,3 +1550,21 @@ onMounted(() => {
     </Tabs>
   </div>
 </template>
+
+<style scoped>
+.theme-swatch { --preview-bg: #eff3fa; --preview-ink: #275da4; --preview-card: #fcfdff; width: 100%; height: 126px; padding: 12px; background: var(--preview-bg); border: 1px solid color-mix(in srgb, var(--preview-ink) 20%, transparent); border-radius: 8px; overflow: hidden; }
+.theme-swatch--vault { --preview-bg: #1b1b2c; --preview-ink: #a09aea; --preview-card: #302f48; }
+.theme-swatch--mint { --preview-bg: #e5f0e8; --preview-ink: #246b4c; --preview-card: #f8fcfa; border-radius: 16px; }
+.theme-swatch--paper { --preview-bg: #f4f0e8; --preview-ink: #91442f; --preview-card: #e6ddd0; border-radius: 1px; }
+.theme-swatch--mono { --preview-bg: #151915; --preview-ink: #c5e779; --preview-card: #2a3426; border-radius: 3px; }
+.theme-swatch-nav { display: flex; gap: 4px; padding-bottom: 9px; border-bottom: 1px solid color-mix(in srgb, var(--preview-ink) 25%, transparent); }
+.theme-swatch-nav i { width: 14px; height: 3px; background: var(--preview-ink); opacity: .5; }
+.theme-swatch-nav i:first-child { width: 28px; margin-right: auto; opacity: 1; }
+.theme-swatch-hero { display: flex; justify-content: space-between; align-items: center; height: 48px; }
+.theme-swatch-hero span { width: 48%; height: 17px; border-block: 5px solid var(--preview-ink); }
+.theme-swatch-hero b { width: 32px; height: 32px; background: var(--preview-ink); opacity: .8; transform: rotate(-12deg); }
+.theme-swatch--mint .theme-swatch-hero b { border-radius: 9px; }
+.theme-swatch--paper .theme-swatch-hero b { width: 28%; height: 24px; transform: none; background: transparent; border-block: 1px solid var(--preview-ink); }
+.theme-swatch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.theme-swatch-grid i { height: 27px; background: var(--preview-card); border-top: 2px solid var(--preview-ink); }
+</style>

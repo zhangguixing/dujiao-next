@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="storefront-catalog">
     <!-- 站长配置的横幅轮播（两种模式共用，顶部展示） -->
     <VaultBannerHero />
 
@@ -89,7 +89,7 @@
           <RouterLink
             v-for="(cat, idx) in topCategories"
             :key="cat.id"
-            class="relative flex min-h-[116px] flex-col justify-between gap-2.5 overflow-hidden rounded-lg p-[18px] transition hover:-translate-y-[3px] hover:shadow-[var(--shadow)]"
+            class="storefront-category-card relative flex min-h-[116px] flex-col justify-between gap-2.5 overflow-hidden rounded-lg p-[18px] transition hover:-translate-y-[3px] hover:shadow-[var(--shadow)]"
             :class="catColor(idx)"
             :to="`/categories/${cat.slug}`"
           >

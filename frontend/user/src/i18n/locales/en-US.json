@@ -1738,5 +1738,31 @@
     "authInvalid": "Credentials mismatch, please try again",
     "authSubmit": "Save and search",
     "authClear": "Clear saved info"
+  },
+  "storefrontThemes": {
+    "mint": {
+      "eyebrow": "A fresh take on digital goods",
+      "title": "Your digital life,",
+      "highlight": "a little fresher.",
+      "description": "Find digital goods that fit your day, from useful tools to everyday essentials.",
+      "objectLabel": "Digital picks",
+      "collection": "The collection"
+    },
+    "paper": {
+      "eyebrow": "A considered digital store",
+      "title": "Thoughtfully picked.",
+      "highlight": "Made for your day.",
+      "description": "Bring the tools and services you need into your everyday. Browse at your own pace.",
+      "indexLabel": "Store index",
+      "collection": "Selected goods"
+    },
+    "mono": {
+      "eyebrow": "For your next idea",
+      "title": "Digital essentials.",
+      "highlight": "Ready when you are.",
+      "description": "Explore digital goods and services for your work, creative projects and everyday life.",
+      "objectLabel": "Digital space",
+      "collection": "Explore the catalog"
+    }
   }
 }

@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen bg-background text-foreground flex flex-col">
-    <!-- vault 模板：自带顶栏/页脚的外壳包裹页面（控制台仍走下方分支） -->
-    <VaultLayout v-if="isVault && !isResellerConsole">
+    <!-- 非 classic 模板：共享店面外壳包裹页面（控制台仍走下方分支） -->
+    <VaultLayout v-if="activeTemplate !== 'classic' && !isResellerConsole" :storefront="activeTemplate">
       <ErrorBoundary>
         <RouterView v-slot="{ Component }">
           <Transition name="page-fade" mode="out-in">
@@ -48,7 +48,7 @@ import ErrorBoundary from './components/ErrorBoundary.vue'
 import BackToTop from './components/BackToTop.vue'
 import MobileBottomNav from './components/MobileBottomNav.vue'
 
-// vault 外壳按需加载，classic 用户不会拉取其 chunk/样式
+// 店面外壳按需加载，classic 用户不会拉取其 chunk/样式
 const VaultLayout = defineAsyncComponent(() => import('./templates/vault/layout/VaultLayout.vue'))
 
 // config 由 router.beforeEach 统一加载，无需在此重复调用
@@ -56,7 +56,7 @@ const appStore = useAppStore()
 const route = useRoute()
 const isResellerConsole = computed(() => route.meta.resellerConsole === true)
 // getActiveTemplate 读取 appStore.config（响应式），config 加载后会重新计算
-const isVault = computed(() => getActiveTemplate() === 'vault')
+const activeTemplate = computed(() => getActiveTemplate())
 </script>
 
 <style>

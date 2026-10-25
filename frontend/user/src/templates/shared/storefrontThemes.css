@@ -1,0 +1,227 @@
+/* Named storefront palettes; shared commerce pages and teleported dialogs use the same tokens. */
+.vault-scope[data-storefront="mint"], body.vault-tokens[data-storefront="mint"] {
+  --bg: #f0f6f2;
+  --bg-warm: #e3eee7;
+  --surface: #f9fcfa;
+  --surface-2: #e8f1eb;
+  --ink: #153b30;
+  --ink-2: #4b685c;
+  --ink-3: #4f6b5e;
+  --border: #cbded1;
+  --red: #246b4c;
+  --red-strong: #195438;
+  --on-red: #f6fcf8;
+  --border-strong: color-mix(in srgb, var(--ink) 30%, var(--bg));
+  --red-soft: color-mix(in srgb, var(--red) 12%, var(--bg));
+  --shadow: 0 12px 30px -20px color-mix(in srgb, var(--ink) 35%, transparent);
+  --shadow-lg: 0 24px 50px -24px color-mix(in srgb, var(--ink) 32%, transparent);
+  --ring: 0 0 0 4px color-mix(in srgb, var(--red) 25%, transparent);
+  --font-head: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r-sm: 14px;
+  --r: 20px;
+  --r-lg: 28px;
+  --r-xl: 36px;
+}
+.dark .vault-scope[data-storefront="mint"], .dark body.vault-tokens[data-storefront="mint"] {
+  --bg: #10251e;
+  --bg-warm: #152e25;
+  --surface: #1a352b;
+  --surface-2: #214336;
+  --ink: #e3f3e9;
+  --ink-2: #b4cfbf;
+  --ink-3: #a2c3b0;
+  --border: #335b47;
+  --red: #7bc8a1;
+  --red-strong: #94d9b5;
+  --on-red: #10281d;
+  --border-strong: color-mix(in srgb, var(--ink) 30%, var(--bg));
+  --red-soft: color-mix(in srgb, var(--red) 12%, var(--bg));
+  --shadow: 0 12px 30px -20px color-mix(in srgb, var(--ink) 35%, transparent);
+  --shadow-lg: 0 24px 50px -24px color-mix(in srgb, var(--ink) 32%, transparent);
+  --ring: 0 0 0 4px color-mix(in srgb, var(--red) 25%, transparent);
+}
+.vault-scope[data-storefront="paper"], body.vault-tokens[data-storefront="paper"] {
+  --bg: #f4f0e8;
+  --bg-warm: #eae4d8;
+  --surface: #fcf9f2;
+  --surface-2: #eee8dd;
+  --ink: #302c27;
+  --ink-2: #686055;
+  --ink-3: #696054;
+  --border: #d8cfc0;
+  --red: #91442f;
+  --red-strong: #783422;
+  --on-red: #fff9ef;
+  --border-strong: color-mix(in srgb, var(--ink) 30%, var(--bg));
+  --red-soft: color-mix(in srgb, var(--red) 12%, var(--bg));
+  --shadow: 0 12px 30px -20px color-mix(in srgb, var(--ink) 35%, transparent);
+  --shadow-lg: 0 24px 50px -24px color-mix(in srgb, var(--ink) 32%, transparent);
+  --ring: 0 0 0 4px color-mix(in srgb, var(--red) 25%, transparent);
+  --font-head: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: Georgia, "Noto Serif SC", "Songti SC", "PMingLiU", serif;
+  --r-sm: 2px;
+  --r: 3px;
+  --r-lg: 4px;
+  --r-xl: 6px;
+}
+.dark .vault-scope[data-storefront="paper"], .dark body.vault-tokens[data-storefront="paper"] {
+  --bg: #25211d;
+  --bg-warm: #2c2722;
+  --surface: #332d27;
+  --surface-2: #3f362d;
+  --ink: #f0e7d8;
+  --ink-2: #c9bbab;
+  --ink-3: #bbaa96;
+  --border: #574a3e;
+  --red: #edaa87;
+  --red-strong: #f5bb9c;
+  --on-red: #302016;
+  --border-strong: color-mix(in srgb, var(--ink) 30%, var(--bg));
+  --red-soft: color-mix(in srgb, var(--red) 12%, var(--bg));
+  --shadow: 0 12px 30px -20px color-mix(in srgb, var(--ink) 35%, transparent);
+  --shadow-lg: 0 24px 50px -24px color-mix(in srgb, var(--ink) 32%, transparent);
+  --ring: 0 0 0 4px color-mix(in srgb, var(--red) 25%, transparent);
+}
+.vault-scope[data-storefront="mono"], body.vault-tokens[data-storefront="mono"] {
+  --bg: #e8ebe7;
+  --bg-warm: #dce1db;
+  --surface: #f4f6f1;
+  --surface-2: #e0e5db;
+  --ink: #20271e;
+  --ink-2: #52604c;
+  --ink-3: #54634e;
+  --border: #c3cdbe;
+  --red: #3c5d22;
+  --red-strong: #2c4518;
+  --on-red: #f7f9ed;
+  --border-strong: color-mix(in srgb, var(--ink) 30%, var(--bg));
+  --red-soft: color-mix(in srgb, var(--red) 12%, var(--bg));
+  --shadow: 0 12px 30px -20px color-mix(in srgb, var(--ink) 35%, transparent);
+  --shadow-lg: 0 24px 50px -24px color-mix(in srgb, var(--ink) 32%, transparent);
+  --ring: 0 0 0 4px color-mix(in srgb, var(--red) 25%, transparent);
+  --font-head: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 8px;
+  --r-xl: 10px;
+}
+.dark .vault-scope[data-storefront="mono"], .dark body.vault-tokens[data-storefront="mono"] {
+  --bg: #151915;
+  --bg-warm: #1a2019;
+  --surface: #1d241c;
+  --surface-2: #252e23;
+  --ink: #edf3e4;
+  --ink-2: #bdcbb2;
+  --ink-3: #a2b496;
+  --border: #35422e;
+  --red: #c5e779;
+  --red-strong: #d9f29c;
+  --on-red: #1d2911;
+  --border-strong: color-mix(in srgb, var(--ink) 30%, var(--bg));
+  --red-soft: color-mix(in srgb, var(--red) 12%, var(--bg));
+  --shadow: 0 12px 30px -20px color-mix(in srgb, var(--ink) 35%, transparent);
+  --shadow-lg: 0 24px 50px -24px color-mix(in srgb, var(--ink) 32%, transparent);
+  --ring: 0 0 0 4px color-mix(in srgb, var(--red) 25%, transparent);
+}
+/* Keep accent labels readable on both light and dark palettes, including shared Vault buttons. */
+.vault-scope[data-storefront]:not([data-storefront="vault"]) .bg-primary.text-white { color: var(--on-red); }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) { min-height: 100dvh; }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) > header { background: var(--bg); }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) .storefront-product-card { border-radius: var(--r-lg); box-shadow: var(--shadow); }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) .storefront-product-card > div:first-child > span { background: var(--red-soft); color: var(--red); border: 1px solid var(--border); border-radius: var(--r); }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) .storefront-product-card > div:first-child > span > svg { color: var(--red); }
+.custom-storefront { max-width: 1180px; margin-inline: auto; padding: 28px 24px 0; }
+.custom-storefront h1 { font-size: clamp(38px, 5.1vw, 68px); line-height: 1.2; letter-spacing: -.035em; overflow-wrap: anywhere; min-width: 0; font-weight: 650; }
+.custom-storefront h1 em { display: block; color: var(--red); font-style: normal; }
+.storefront-intro { position: relative; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; gap: 24px; padding: 56px 42px; min-height: 420px; }
+.storefront-intro-copy { min-width: 0; z-index: 1; }
+.storefront-eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 24px !important; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--ink-2); }
+.storefront-eyebrow > span { width: 7px; height: 7px; background: var(--red); border-radius: 50%; }
+.storefront-description { margin-top: 24px !important; max-width: 40ch; font-size: 15px; line-height: 1.85; color: var(--ink-2); }
+.storefront-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 30px; }
+.storefront-primary, .storefront-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 18px; min-height: 46px; white-space: nowrap; font-size: 14px; font-weight: 600; transition: transform .2s, background .2s; }
+.storefront-primary { padding: 12px 22px; background: var(--red); color: var(--on-red) !important; border-radius: var(--r-sm); }
+.storefront-primary:hover { background: var(--red-strong); transform: translateY(-2px); }
+.storefront-secondary:hover { color: var(--red); }
+.storefront-divider { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 0; margin-top: 26px; border-bottom: 1px solid var(--border-strong); }
+.storefront-divider > span:first-child { font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+.storefront-divider > span:last-child { color: var(--ink-2); font-size: 12px; }
+#storefront-catalog { scroll-margin-top: 90px; }
+.custom-storefront .storefront-catalog > section { padding-inline: 0; }
+.custom-storefront .storefront-catalog h2 { font-size: 25px; }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) .storefront-category-card { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.vault-scope[data-storefront]:not([data-storefront="vault"]) .storefront-product-card > div:first-child > span::after { display: none; }
+/* Mint: a soft split composition, layered gift tickets and spacious cards. */
+.custom-storefront--mint .storefront-intro { background: var(--bg-warm); border-radius: 28px; }
+.mint-object { position: relative; min-height: 290px; display: grid; place-items: center; }
+.mint-orbit { position: absolute; width: 260px; aspect-ratio: 1; border: 1px solid var(--border-strong); border-radius: 50%; }
+.mint-ticket { position: absolute; display: grid; gap: 14px; padding: 28px; width: 192px; height: 238px; border: 1px solid var(--border-strong); border-radius: 20px; box-shadow: var(--shadow-lg); }
+.mint-ticket-back { background: var(--red); color: var(--on-red); transform: rotate(-17deg) translate(-24px, -4px); }
+.mint-ticket-front { background: var(--surface); transform: rotate(10deg) translate(28px, 10px); color: var(--red); }
+.mint-ticket-front span { color: var(--ink-2); font-size: 12px; }
+.mint-ticket-front > svg:last-child { justify-self: end; }
+.mint-spark { position: absolute; top: 8px; right: 22px; font-size: 60px; color: var(--red); }
+.vault-scope[data-storefront="mint"] .storefront-product-card { padding: 18px; }
+/* Paper: a typographic editorial spread, ruled index and flat catalog. */
+.custom-storefront--paper .storefront-intro { padding: 46px 0 54px; border-block: 1px solid var(--border-strong); margin-top: 14px; gap: 60px; }
+.custom-storefront--paper h1 { font-weight: 500; font-size: clamp(38px, 5.1vw, 66px); letter-spacing: -.035em; }
+.custom-storefront--paper h1 em { font-style: italic; }
+.custom-storefront--paper .storefront-primary { border-radius: 0; }
+.paper-index { position: relative; border-top: 3px solid var(--ink); align-self: stretch; padding-top: 16px; }
+.paper-index-label { display: block; font-size: 12px; color: var(--ink-2); padding-bottom: 20px; }
+.paper-index a { display: flex; align-items: center; gap: 18px; border-top: 1px solid var(--border-strong); min-height: 60px; font-size: 14px; }
+.paper-index a > span { color: var(--red); font-family: var(--font-head); font-style: italic; font-size: 16px; }
+.paper-index a > svg { margin-left: auto; }
+.paper-index a:hover { color: var(--red); }
+.paper-stamp { display: flex; justify-content: flex-end; padding-top: 18px; color: var(--red); }
+.vault-scope[data-storefront="paper"] .storefront-product-card { box-shadow: none; border-width: 0 0 1px; padding: 0 0 20px; border-radius: 0; background: transparent; }
+.vault-scope[data-storefront="paper"] .storefront-product-card h3 { font-family: var(--font-body); font-weight: 500; }
+/* Graphite: offset geometric blocks, utility typography and lime. */
+.custom-storefront--mono .storefront-intro { border: 1px solid var(--border-strong); background: var(--surface); }
+.custom-storefront--mono .storefront-eyebrow, .custom-storefront--mono .storefront-divider { font-family: ui-monospace, monospace; }
+.custom-storefront--mono h1 { letter-spacing: -.04em; font-weight: 750; }
+.mono-object { position: relative; min-height: 280px; display: grid; place-items: center; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 28px 28px; }
+.mono-cube { position: relative; width: 168px; height: 180px; transform: rotate(-12deg); }
+.mono-cube div { position: absolute; width: 126px; height: 126px; border: 1px solid var(--red); background: var(--surface); }
+.mono-cube div:nth-child(1) { top: 0; left: 42px; opacity: .45; }
+.mono-cube div:nth-child(2) { top: 25px; left: 21px; opacity: .75; }
+.mono-cube div:nth-child(3) { top: 50px; left: 0; background: var(--red); box-shadow: 12px 12px 0 var(--bg); }
+.mono-cross { position: absolute; font-family: ui-monospace, monospace; color: var(--red); font-size: 24px; line-height: 1; }
+.mono-cross-a { top: 0; left: 0; }.mono-cross-b { bottom: 0; right: 0; }
+.mono-caption { position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-2); }
+.vault-scope[data-storefront="mono"] .storefront-product-card { box-shadow: none; }
+@media (min-width: 1000px) {
+  .custom-storefront--paper .storefront-catalog .grid:has(> .storefront-product-card) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  .custom-storefront--mono .storefront-catalog .grid:has(> .storefront-product-card) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+}
+@media (max-width: 767px) {
+  .custom-storefront { padding: 20px 16px 0; }
+  .storefront-intro { grid-template-columns: minmax(0, 1fr); padding: 32px 24px; gap: 30px; }
+  .storefront-intro-copy { width: 100%; }
+  .storefront-description { margin-top: 18px !important; font-size: 14px; }
+  .storefront-eyebrow { margin-bottom: 18px !important; }
+  .storefront-actions { gap: 18px; margin-top: 24px; }
+  .custom-storefront--paper .storefront-intro { padding-inline: 0; gap: 32px; }
+  .mint-object { min-height: 230px; }
+  .mint-ticket { width: 150px; height: 190px; padding: 20px; }
+  .mint-ticket-front > svg:first-child { width: 46px; height: 46px; }
+  .mint-orbit { width: 210px; }.mint-spark { font-size: 44px; right: 10px; }
+  .paper-index { padding-top: 12px; }.paper-index-label { padding-bottom: 12px; }.paper-stamp { display: none; }
+  .mono-object { min-height: 250px; }
+  .storefront-divider { margin-top: 14px; }
+  .vault-scope[data-storefront]:not([data-storefront="vault"]) > header > div { gap: 8px; padding-inline: 12px; }
+  .vault-scope[data-storefront]:not([data-storefront="vault"]) > header > div > div { gap: 4px; }
+  .vault-scope[data-storefront]:not([data-storefront="vault"]) > header button, .vault-scope[data-storefront]:not([data-storefront="vault"]) > header a.grid { width: 44px; height: 44px; }
+}
+@media (max-width: 374px) {
+  .vault-scope[data-storefront]:not([data-storefront="vault"]) > header > div > div > a:first-child { display: none; }
+  .storefront-intro { padding-inline: 18px; }
+  .custom-storefront h1 { font-size: 35px; }
+  .storefront-primary { padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .custom-storefront *, .custom-storefront *::before, .custom-storefront *::after { transition: none !important; animation: none !important; }
+}

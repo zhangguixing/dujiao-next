@@ -1,5 +1,5 @@
 <template>
-  <div class="vault-scope">
+  <div class="vault-scope" :data-storefront="storefront">
     <!-- 顶栏 -->
     <header class="sticky top-0 z-50 border-b bg-[color:var(--bg)]">
       <div class="mx-auto flex h-[70px] w-full max-w-[1180px] items-center gap-3 px-4 sm:gap-5 sm:px-6">
@@ -138,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Search, Moon, Sun, ShoppingCart, Languages, Menu, X, User, Info, ClipboardList, LogOut, Github,
@@ -162,6 +162,16 @@ import '@fontsource/nunito-sans/latin-500.css'
 import '@fontsource/nunito-sans/latin-600.css'
 import '@fontsource/nunito-sans/latin-700.css'
 import '../styles/vault.css'
+import '../../shared/storefrontThemes.css'
+import type { StorefrontTemplate } from '../../registry'
+
+const props = withDefaults(defineProps<{ storefront?: StorefrontTemplate }>(), { storefront: 'vault' })
+
+// 浮层 Teleport 到 body，也需要当前主题的令牌。控制台卸载外壳时自动清理。
+watchEffect((onCleanup) => {
+  document.body.dataset.storefront = props.storefront
+  onCleanup(() => { delete document.body.dataset.storefront })
+})
 
 const { t } = useI18n()
 const appStore = useAppStore()

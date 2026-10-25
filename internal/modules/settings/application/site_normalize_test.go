@@ -744,3 +744,58 @@ func TestUpdateSiteSettingValidatesContactLinks(t *testing.T) {
 		t.Fatalf("empty contact links rejected: %v", err)
 	}
 }
+
+func TestStorefrontTemplateSelectionRoundTrip(t *testing.T) {
+	for _, template := range []string{"classic", "vault", "mint", "paper", "mono", "circuit", "signal", "unknown", ""} {
+		t.Run(template, func(t *testing.T) {
+			repo := newMockSettingRepo()
+			svc := NewService(repo)
+			expected := template
+			if template == "unknown" || template == "" || template == "circuit" || template == "signal" {
+				expected = constants.StorefrontTemplateDefault
+			}
+			_, err := svc.Update(constants.SettingKeySiteConfig, map[string]interface{}{
+				constants.SettingFieldStorefrontTemplate: "  " + template + "  ",
+			})
+			if err != nil {
+				t.Fatalf("save theme: %v", err)
+			}
+			saved, err := svc.GetByKey(constants.SettingKeySiteConfig)
+			if err != nil {
+				t.Fatalf("reload theme: %v", err)
+			}
+			if saved[constants.SettingFieldStorefrontTemplate] != expected {
+				t.Fatalf("theme after reload = %v, want %s", saved[constants.SettingFieldStorefrontTemplate], expected)
+			}
+		})
+	}
+}
+
+func TestGetConfigFallsBackFromRemovedStorefrontThemes(t *testing.T) {
+	for _, theme := range []string{"classic", "vault", "mint", "paper", "mono", "circuit", "signal"} {
+		t.Run(theme, func(t *testing.T) {
+			repo := newMockSettingRepo()
+			repo.store[constants.SettingKeySiteConfig] = map[string]interface{}{
+				constants.SettingFieldStorefrontTemplate: theme,
+				"brand":                                  map[string]interface{}{"site_name": "Existing Shop"},
+			}
+			result, err := NewService(repo).GetConfig(map[string]interface{}{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			expected := theme
+			if theme == "circuit" || theme == "signal" {
+				expected = constants.StorefrontTemplateDefault
+			}
+			if result[constants.SettingFieldStorefrontTemplate] != expected {
+				t.Fatalf("public theme = %v, want %s", result[constants.SettingFieldStorefrontTemplate], expected)
+			}
+			if result["brand"].(map[string]interface{})["site_name"] != "Existing Shop" {
+				t.Fatal("unrelated site settings changed")
+			}
+			if repo.store[constants.SettingKeySiteConfig][constants.SettingFieldStorefrontTemplate] != theme {
+				t.Fatal("reading public config must not modify stored settings")
+			}
+		})
+	}
+}
