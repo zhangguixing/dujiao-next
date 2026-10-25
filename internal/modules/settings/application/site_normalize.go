@@ -2,6 +2,8 @@ package settingsapp
 
 import (
 	settingsvalue "github.com/dujiao-next/internal/modules/settings/schema/value"
+	"net/url"
+	"path"
 	"regexp"
 	"strings"
 
@@ -12,6 +14,8 @@ import (
 
 var settingSupportedLanguages = append([]string(nil), constants.SupportedLocales...)
 var settingCurrencyCodePattern = regexp.MustCompile(`^[A-Z]{3}$`)
+var settingContactQQPattern = regexp.MustCompile(`^[1-9][0-9]{4,11}$`)
+var settingContactWeChatPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
 const (
 	settingSiteScriptsMaxCount       = 20
@@ -128,8 +132,11 @@ func normalizeSiteFooterLinks(raw interface{}) []interface{} {
 
 func normalizeSiteContact(raw interface{}) map[string]interface{} {
 	result := map[string]interface{}{
-		"telegram": "",
-		"whatsapp": "",
+		"telegram":      "",
+		"whatsapp":      "",
+		"qq":            "",
+		"wechat":        "",
+		"wechat_qrcode": "",
 	}
 	contactMap, ok := raw.(map[string]interface{})
 	if !ok {
@@ -137,6 +144,9 @@ func normalizeSiteContact(raw interface{}) map[string]interface{} {
 	}
 	result["telegram"] = normalizeSettingText(contactMap["telegram"])
 	result["whatsapp"] = normalizeSettingText(contactMap["whatsapp"])
+	for _, field := range []string{"qq", "wechat", "wechat_qrcode"} {
+		result[field] = normalizeSettingText(contactMap[field])
+	}
 	return result
 }
 
@@ -158,7 +168,28 @@ func validateSiteSetting(value jsonmap.JSON) error {
 	if whatsApp, _ := contact["whatsapp"].(string); whatsApp != "" && !contactlink.IsWhatsApp(whatsApp) {
 		return &SettingFieldError{Field: "contact_whatsapp"}
 	}
+	if qq, _ := contact["qq"].(string); qq != "" && !settingContactQQPattern.MatchString(qq) {
+		return &SettingFieldError{Field: "contact_qq"}
+	}
+	if wechat, _ := contact["wechat"].(string); wechat != "" && !settingContactWeChatPattern.MatchString(wechat) {
+		return &SettingFieldError{Field: "contact_wechat"}
+	}
+	if qrCode, _ := contact["wechat_qrcode"].(string); qrCode != "" && !isContactQRCodeURL(qrCode) {
+		return &SettingFieldError{Field: "contact_wechat_qrcode"}
+	}
 	return nil
+}
+
+func isContactQRCodeURL(value string) bool {
+	parsed, err := url.Parse(value)
+	if err != nil || parsed.User != nil || strings.ContainsAny(value, "\\\r\n") {
+		return false
+	}
+	if parsed.Scheme == "https" && parsed.Hostname() != "" {
+		return true
+	}
+	return parsed.Scheme == "" && parsed.Host == "" && strings.HasPrefix(parsed.Path, "/uploads/") &&
+		strings.HasPrefix(path.Clean(parsed.Path), "/uploads/")
 }
 
 func normalizeSiteBrand(raw interface{}) map[string]interface{} {
@@ -334,8 +365,10 @@ func normalizeSiteTemplateMode(raw interface{}) string {
 
 // normalizeStorefrontTemplate 归一化店面模板，未知值回退到 classic。
 func normalizeStorefrontTemplate(raw interface{}) string {
-	if normalizeSettingText(raw) == constants.StorefrontTemplateVault {
-		return constants.StorefrontTemplateVault
+	switch value := normalizeSettingText(raw); value {
+	case constants.StorefrontTemplateClassic, constants.StorefrontTemplateVault,
+		constants.StorefrontTemplateMint, constants.StorefrontTemplatePaper, constants.StorefrontTemplateMono:
+		return value
 	}
 	return constants.StorefrontTemplateDefault
 }

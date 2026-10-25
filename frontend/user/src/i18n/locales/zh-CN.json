@@ -1764,5 +1764,20 @@
       "objectLabel": "数字空间",
       "collection": "探索商品"
     }
+  },
+  "contactChannels": {
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "qq": "QQ",
+    "wechat": "微信",
+    "showAccount": "查看 {platform} 联系方式",
+    "qqAccount": "QQ 号",
+    "wechatAccount": "微信号",
+    "copyAccount": "复制账号",
+    "copied": "账号已复制",
+    "copyFailed": "复制失败，请长按或选中账号手动复制",
+    "wechatQRCode": "微信联系二维码",
+    "scanWeChat": "使用微信扫一扫，添加联系人",
+    "qrLoadFailed": "二维码暂时无法显示"
   }
 }

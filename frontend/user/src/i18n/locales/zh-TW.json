@@ -1764,5 +1764,20 @@
       "objectLabel": "數位空間",
       "collection": "探索商品"
     }
+  },
+  "contactChannels": {
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "qq": "QQ",
+    "wechat": "微信",
+    "showAccount": "查看 {platform} 聯絡方式",
+    "qqAccount": "QQ 號",
+    "wechatAccount": "微信號",
+    "copyAccount": "複製帳號",
+    "copied": "帳號已複製",
+    "copyFailed": "複製失敗，請長按或選取帳號手動複製",
+    "wechatQRCode": "微信聯絡 QR Code",
+    "scanWeChat": "使用微信掃描，加入聯絡人",
+    "qrLoadFailed": "QR Code 暫時無法顯示"
   }
 }

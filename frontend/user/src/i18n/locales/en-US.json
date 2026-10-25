@@ -1764,5 +1764,20 @@
       "objectLabel": "Digital space",
       "collection": "Explore the catalog"
     }
+  },
+  "contactChannels": {
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "qq": "QQ",
+    "wechat": "WeChat",
+    "showAccount": "Show {platform} contact details",
+    "qqAccount": "QQ number",
+    "wechatAccount": "WeChat ID",
+    "copyAccount": "Copy account",
+    "copied": "Account copied",
+    "copyFailed": "Could not copy. Select the account and copy it manually.",
+    "wechatQRCode": "WeChat contact QR code",
+    "scanWeChat": "Scan with WeChat to add this contact",
+    "qrLoadFailed": "The QR code could not be displayed."
   }
 }

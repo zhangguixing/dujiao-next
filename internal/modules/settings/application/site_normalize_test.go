@@ -745,6 +745,7 @@ func TestUpdateSiteSettingValidatesContactLinks(t *testing.T) {
 	}
 }
 
+// Exercise the settings persistence path: a newly selected theme must survive a reload.
 func TestStorefrontTemplateSelectionRoundTrip(t *testing.T) {
 	for _, template := range []string{"classic", "vault", "mint", "paper", "mono", "circuit", "signal", "unknown", ""} {
 		t.Run(template, func(t *testing.T) {
@@ -766,6 +767,86 @@ func TestStorefrontTemplateSelectionRoundTrip(t *testing.T) {
 			}
 			if saved[constants.SettingFieldStorefrontTemplate] != expected {
 				t.Fatalf("theme after reload = %v, want %s", saved[constants.SettingFieldStorefrontTemplate], expected)
+			}
+		})
+	}
+}
+
+func TestSiteContactQQAndWeChatRoundTrip(t *testing.T) {
+	repo := newMockSettingRepo()
+	svc := NewService(repo)
+	_, err := svc.Update(constants.SettingKeySiteConfig, map[string]interface{}{
+		"contact": map[string]interface{}{
+			"telegram":      " https://t.me/shop ",
+			"whatsapp":      " https://wa.me/1234567890 ",
+			"qq":            " 123456789 ",
+			"wechat":        " shop_support-01 ",
+			"wechat_qrcode": " /uploads/common/wechat.png ",
+		},
+	})
+	if err != nil {
+		t.Fatalf("save contact: %v", err)
+	}
+	public, err := svc.GetConfig(nil)
+	if err != nil {
+		t.Fatalf("load public contact: %v", err)
+	}
+	want := map[string]interface{}{
+		"telegram": "https://t.me/shop", "whatsapp": "https://wa.me/1234567890",
+		"qq": "123456789", "wechat": "shop_support-01", "wechat_qrcode": "/uploads/common/wechat.png",
+	}
+	if !reflect.DeepEqual(public["contact"], want) {
+		t.Fatalf("public contact = %#v, want %#v", public["contact"], want)
+	}
+	if _, err := svc.Update(constants.SettingKeySiteConfig, map[string]interface{}{"contact": map[string]interface{}{}}); err != nil {
+		t.Fatalf("clear contact: %v", err)
+	}
+	public, err = svc.GetConfig(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for key, value := range public["contact"].(map[string]interface{}) {
+		if value != "" {
+			t.Fatalf("cleared %s still exposed: %v", key, value)
+		}
+	}
+}
+
+func TestSiteContactValidatesQQWeChatAndQRCode(t *testing.T) {
+	cases := []struct {
+		key, value string
+		valid      bool
+	}{
+		{"qq", "12345", true}, {"qq", "123456789012", true},
+		{"qq", "01234", false}, {"qq", "1234", false}, {"qq", "1234567890123", false}, {"qq", "javascript:alert(1)", false},
+		{"wechat", "wxid_shop_01", true}, {"wechat", "Shop-Support", true},
+		{"wechat", "shop support", false}, {"wechat", "<script>", false},
+		{"wechat", "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm", false},
+		{"wechat_qrcode", "/uploads/common/wechat.png", true},
+		{"wechat_qrcode", "https://example.com/wechat.png?v=1", true},
+		{"wechat_qrcode", "javascript:alert(1)", false},
+		{"wechat_qrcode", "data:image/svg+xml,<svg/>", false},
+		{"wechat_qrcode", "//example.com/wechat.png", false},
+		{"wechat_qrcode", "/uploads/../../config.yml", false},
+		{"wechat_qrcode", "/uploads/%2e%2e/config.yml", false},
+		{"wechat_qrcode", "https://user:password@example.com/wechat.png", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.key+"/"+tc.value, func(t *testing.T) {
+			repo := newMockSettingRepo()
+			_, err := NewService(repo).Update(constants.SettingKeySiteConfig, map[string]interface{}{"contact": map[string]interface{}{tc.key: tc.value}})
+			if tc.valid {
+				if err != nil {
+					t.Fatalf("valid value rejected: %v", err)
+				}
+				return
+			}
+			var fieldErr *SettingFieldError
+			if !errors.As(err, &fieldErr) || fieldErr.Field != "contact_"+tc.key {
+				t.Fatalf("want field error for %s, got %v", tc.key, err)
+			}
+			if _, exists := repo.store[constants.SettingKeySiteConfig]; exists {
+				t.Fatal("invalid contact persisted")
 			}
 		})
 	}

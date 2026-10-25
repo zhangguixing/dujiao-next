@@ -196,6 +196,9 @@ const form = reactive({
   contact: {
     telegram: '',
     whatsapp: '',
+    qq: '',
+    wechat: '',
+    wechat_qrcode: '',
   },
   seo: {
     title: createLocalizedField(),
@@ -1049,6 +1052,19 @@ onMounted(() => {
           <div class="space-y-2">
             <label class="text-xs font-medium text-muted-foreground">{{ t('admin.settings.contact.whatsapp') }}</label>
             <Input v-model="form.contact.whatsapp" :placeholder="t('admin.settings.contact.whatsappPlaceholder')" />
+          </div>
+          <div class="space-y-2">
+            <Label for="contact-qq">{{ t('admin.settings.contact.qq') }}</Label>
+            <Input id="contact-qq" v-model="form.contact.qq" inputmode="numeric" maxlength="12" :placeholder="t('admin.settings.contact.qqPlaceholder')" />
+          </div>
+          <div class="space-y-2">
+            <Label for="contact-wechat">{{ t('admin.settings.contact.wechat') }}</Label>
+            <Input id="contact-wechat" v-model="form.contact.wechat" maxlength="64" :placeholder="t('admin.settings.contact.wechatPlaceholder')" />
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <p class="text-xs font-medium text-muted-foreground">{{ t('admin.settings.contact.wechatQRCode') }}</p>
+            <MediaPicker v-model="form.contact.wechat_qrcode" scene="common" />
+            <p class="text-xs text-muted-foreground">{{ t('admin.settings.contact.wechatQRCodeHint') }}</p>
           </div>
         </div>
       </div>
