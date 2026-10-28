@@ -243,21 +243,12 @@ func SetupRouter(cfg *config.Config, c *container.Container) *gin.Engine {
 	// middleware.RequestIDMiddleware 必须前置于 middleware.RecoveryMiddleware：panic 日志与响应都依赖 request_id。
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
+	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(middleware.LoggerMiddleware(log))
 	r.Use(middleware.CORSMiddleware(cfg.CORS))
 	r.Use(middleware.CallbackRouteMiddleware(c.SettingService, paymentCallbackHandler, paymentWebhookHandler, upstreamHandler))
 
-	// 静态文件服务（上传的图片）必须放在前面。
-	// 所有上传文件一律禁止脚本：即使上传校验被绕过（如 telegram 场景不限扩展名、上游图片），
-	// 直接打开 /uploads/x.html 也不会在站点源下执行脚本；<img src> 引用不受影响。
-	// SVG 额外强制下载。
-	r.Group("/uploads", func(c *gin.Context) {
-		c.Header("Content-Security-Policy", "sandbox; script-src 'none'")
-		c.Header("X-Content-Type-Options", "nosniff")
-		if strings.EqualFold(path.Ext(c.Request.URL.Path), ".svg") {
-			c.Header("Content-Disposition", "attachment")
-		}
-	}).Static("/", "./uploads")
+	registerUploadRoutes(r, "./uploads")
 
 	// SEO 资源（动态生成）。
 	sitemaptransport.RegisterRoutes(r, sitemaptransport.NewHandler(c.SitemapService, sitemapbrand.New(c.SettingService)))
@@ -389,4 +380,16 @@ func deriveAdminPermissionModule(object string) string {
 		return "authz"
 	}
 	return segments[1]
+}
+
+func registerUploadRoutes(r *gin.Engine, root string) {
+	// Uploaded files must never execute scripts in the site's origin. Disable
+	// directory listings so private proof/attachment URLs cannot be enumerated.
+	r.Group("/uploads", func(c *gin.Context) {
+		c.Header("Content-Security-Policy", "sandbox; script-src 'none'")
+		c.Header("X-Content-Type-Options", "nosniff")
+		if strings.EqualFold(path.Ext(c.Request.URL.Path), ".svg") {
+			c.Header("Content-Disposition", "attachment")
+		}
+	}).StaticFS("/", gin.Dir(root, false))
 }

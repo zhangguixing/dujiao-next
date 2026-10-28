@@ -273,3 +273,37 @@ func newContentRouteAccessRouter(adminRepo admincontract.Store, authzService *au
 	contenttransport.RegisterAdminRoutes(admin, contenttransport.NewAdminHandler(nil, nil, nil, nil))
 	return router
 }
+
+func TestUploadsDoNotListPrivateAttachments(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "manual_recharge"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{"manual_recharge/private-proof.png": "proof", "image.svg": "<svg/>", "image.png": "image"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r := gin.New()
+	registerUploadRoutes(r, root)
+	for _, url := range []string{"/uploads/", "/uploads/manual_recharge/"} {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, url, nil))
+		if w.Code != http.StatusNotFound || strings.Contains(w.Body.String(), "private-proof") || strings.Contains(w.Body.String(), "manual_recharge") {
+			t.Errorf("directory exposed: %s: %d %s", url, w.Code, w.Body.String())
+		}
+	}
+	for _, name := range []string{"image.png", "image.svg", "manual_recharge/private-proof.png"} {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/uploads/"+name, nil))
+		if w.Code != http.StatusOK {
+			t.Fatalf("file %s status = %d", name, w.Code)
+		}
+		if w.Header().Get("Content-Security-Policy") != "sandbox; script-src 'none'" || w.Header().Get("X-Content-Type-Options") != "nosniff" {
+			t.Fatalf("upload script protections missing: %s", name)
+		}
+		if name == "image.svg" && w.Header().Get("Content-Disposition") != "attachment" {
+			t.Fatal("SVG must download as an attachment")
+		}
+	}
+}

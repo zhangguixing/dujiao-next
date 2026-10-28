@@ -63,15 +63,18 @@ func InitDB(driver, dsn string, pool DBPoolConfig, mode string) error {
 }
 
 func newGORMLogger(mode string, writer gormlogger.Writer) gormlogger.Interface {
+	// SQL parameters can contain card secrets and credentials in every run mode.
+	// Keep development query visibility without interpolating their values.
+	level := gormlogger.Warn
 	if !strings.EqualFold(strings.TrimSpace(mode), "release") {
-		return gormlogger.Default.LogMode(gormlogger.Info)
+		level = gormlogger.Info
 	}
 	if writer == nil {
 		writer = log.New(os.Stdout, "\r\n", log.LstdFlags)
 	}
 	return gormlogger.New(writer, gormlogger.Config{
 		SlowThreshold:             2 * time.Second,
-		LogLevel:                  gormlogger.Warn,
+		LogLevel:                  level,
 		IgnoreRecordNotFoundError: true,
 		ParameterizedQueries:      true,
 		Colorful:                  false,
