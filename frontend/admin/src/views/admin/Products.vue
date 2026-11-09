@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { notifyError, notifySuccess } from '@/utils/notify'
+import { notifyError, notifyInfo, notifySuccess } from '@/utils/notify'
 import TableSkeleton from '@/components/TableSkeleton.vue'
 import ListPagination from '@/components/ListPagination.vue'
 import type { ListFetchOptions } from '@/composables/useListRefresh'
@@ -69,15 +69,37 @@ const toggleSelect = (id: number) => {
   selectedIds.value = next
 }
 
+interface ProductBatchResult {
+  success_count: number
+  failed_items?: { error_code: string; message: string }[]
+}
+
 const runBatch = async (ids: number[], call: (ids: number[]) => Promise<any>, resultKey: string) => {
   batchOperating.value = true
   try {
     const res = await call(ids)
-    const data = res.data.data as { success_count?: number } | null
-    notifySuccess(t(resultKey, { success: data?.success_count || 0, total: ids.length }))
-    selectedIds.value = new Set()
+    const data = res.data.data as ProductBatchResult | null
+    const success = data?.success_count ?? 0
+    const total = ids.length
+    if (success === total) {
+      notifySuccess(t(resultKey, { success, total }))
+    } else {
+      const reasons = (data?.failed_items ?? []).map((item) =>
+        item.error_code === 'product_category_invalid'
+          ? t('admin.products.batch.assignCategoryBeforeActivating')
+          : item.message,
+      )
+      const reason = [...new Set(reasons.filter(Boolean))].join(' / ')
+      const message = t('admin.products.batch.failedResult', { success, failed: total - success, reason })
+      if (success === 0) notifyError(message)
+      else notifyInfo(message)
+    }
     fetchProducts()
-  } catch (err: any) { notifyError(err?.response?.data?.message || err?.message) } finally { batchOperating.value = false }
+  } catch (err: any) {
+    if (!isNotifiedError(err)) notifyError(err?.message)
+  } finally {
+    batchOperating.value = false
+  }
 }
 
 const handleBatchStatus = async (isActive: boolean) => {

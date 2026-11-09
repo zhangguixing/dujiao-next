@@ -10,6 +10,7 @@ import (
 
 	mappingcontract "github.com/dujiao-next/internal/modules/catalog/mapping/contract"
 	mappingdomain "github.com/dujiao-next/internal/modules/catalog/mapping/domain"
+	productcontract "github.com/dujiao-next/internal/modules/catalog/product/contract"
 	siteconnectioncontract "github.com/dujiao-next/internal/modules/siteconnection/contract"
 
 	siteconnectiondomain "github.com/dujiao-next/internal/modules/siteconnection/domain"
@@ -26,8 +27,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// SyncProduct 同步单个映射商品的上游数据（全量同步）
+// SyncProduct 全量同步单个映射商品，并补齐未分配的本地分类。
 func (s *Service) SyncProduct(mappingID uint) error {
+	return s.syncProduct(mappingID, true)
+}
+
+func (s *Service) syncProduct(mappingID uint, fillMissingCategory bool) error {
 	mapping, err := s.mappings.GetByID(mappingID)
 	if err != nil {
 		return err
@@ -74,20 +79,20 @@ func (s *Service) SyncProduct(mappingID uint) error {
 		return s.markUpstreamUnavailable(mapping, mappingdomain.UpstreamStatusInactive, now)
 	}
 
-	// ── 1. 同步本地商品字段（表单配置、上下架状态） ──
-	localProduct, err := s.products.GetByID(strconv.FormatUint(uint64(mapping.LocalProductID), 10))
+	// ── 1. 同步本地商品字段（分类、表单配置） ──
+	localProductID := strconv.FormatUint(uint64(mapping.LocalProductID), 10)
+	localProduct, err := s.products.GetByID(localProductID)
 	if err != nil {
 		return fmt.Errorf("get local product: %w", err)
 	}
 	if localProduct != nil {
-		needsProductUpdate := false
-		// 同步人工交付表单配置
-		if upProduct.ManualFormSchema != nil {
-			localProduct.ManualFormSchemaJSON = upProduct.ManualFormSchema
-			needsProductUpdate = true
+		if fillMissingCategory && localProduct.CategoryID == 0 && upProduct.CategoryID > 0 {
+			if err := s.syncMissingProductCategory(ctx, adapter, mapping.LocalProductID, upProduct.CategoryID); err != nil {
+				return fmt.Errorf("sync product category: %w", err)
+			}
 		}
-		if needsProductUpdate {
-			_ = s.products.Update(localProduct)
+		if upProduct.ManualFormSchema != nil {
+			_ = s.products.QuickUpdate(localProductID, map[string]interface{}{"manual_form_schema_json": upProduct.ManualFormSchema})
 		}
 	}
 
@@ -214,6 +219,27 @@ func (s *Service) SyncProduct(mappingID uint) error {
 	return s.mappings.Update(mapping)
 }
 
+func (s *Service) syncMissingProductCategory(ctx context.Context, adapter upstream.Adapter, productID, upstreamCategoryID uint) error {
+	categories, err := s.fetchUpstreamCategoryMap(ctx, adapter)
+	if err != nil {
+		return err
+	}
+	if _, ok := categories[upstreamCategoryID]; !ok {
+		return nil
+	}
+	category, err := s.findOrCreateCategoryFromUpstream(upstreamCategoryID, categories)
+	if err != nil {
+		return err
+	}
+	if !category.IsActive {
+		return productcontract.ErrProductCategoryInvalid
+	}
+	if err := productdomain.ValidateCategoryAssignment(s.categories, category.ID, 0, productcontract.ErrProductCategoryInvalid); err != nil {
+		return err
+	}
+	return s.products.SetCategoryIfUnassigned(productID, category.ID)
+}
+
 func (s *Service) syncUpstreamWholesalePrices(mapping *mappingdomain.Mapping, localProductID uint, conn *siteconnectiondomain.Connection, upProduct *upstream.UpstreamProduct) error {
 	if s == nil || mapping == nil || conn == nil || upProduct == nil || localProductID == 0 || len(upProduct.WholesalePrices) == 0 {
 		return nil
@@ -258,10 +284,10 @@ func (s *Service) syncUpstreamWholesalePrices(mapping *mappingdomain.Mapping, lo
 //   - status==deleted 时同时停用映射（IsActive=false），避免后续白白调上游
 func (s *Service) markUpstreamUnavailable(mapping *mappingdomain.Mapping, status string, now time.Time) error {
 	// 本地商品下架
-	localProduct, err := s.products.GetByID(strconv.FormatUint(uint64(mapping.LocalProductID), 10))
+	localProductID := strconv.FormatUint(uint64(mapping.LocalProductID), 10)
+	localProduct, err := s.products.GetByID(localProductID)
 	if err == nil && localProduct != nil && localProduct.IsActive {
-		localProduct.IsActive = false
-		_ = s.products.Update(localProduct)
+		_ = s.products.QuickUpdate(localProductID, map[string]interface{}{"is_active": false})
 	}
 
 	// SKU 映射 + 本地 SKU 下架
@@ -419,7 +445,7 @@ func (s *Service) EnsureUpstreamStockForOrder(localSKUID uint, requiredQty int) 
 	}
 
 	// 缓存库存不足 → 实时同步上游商品
-	if syncErr := s.SyncProduct(skuMapping.ProductMappingID); syncErr != nil {
+	if syncErr := s.syncProduct(skuMapping.ProductMappingID, false); syncErr != nil {
 		// 上游抖动：fail-open，记录但不阻断下单
 		logger.Warnw("preorder_stock_check_realtime_sync_failed",
 			"local_sku_id", localSKUID,

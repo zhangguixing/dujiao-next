@@ -17,6 +17,7 @@ import (
 // ProductStore 是映射服务装配所需的商品持久化与事务能力。
 type ProductStore interface {
 	productcontract.Repository
+	SetCategoryIfUnassigned(productID, categoryID uint) error
 	Transaction(fn func(tx *gorm.DB) error) error
 	BindTx(tx *gorm.DB) productcontract.Repository
 }

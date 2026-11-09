@@ -145,8 +145,19 @@ func setupAdminHandlerTest(t *testing.T, upstreamHandler http.HandlerFunc) (*map
 	return h, db, conn.ID, server.Close
 }
 
-func TestBatchImportUpstreamProductsWithoutCategory(t *testing.T) {
+func TestBatchSyncBackfillsUncategorizedImportedProduct(t *testing.T) {
 	h, db, connID, cleanup := setupAdminHandlerTest(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/upstream/categories" {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"ok": true,
+				"categories": []upstream.UpstreamCategory{
+					{ID: 8, Slug: "upstream-parent", Name: jsonmap.JSON{"zh-CN": "上游父分类"}},
+					{ID: 9, ParentID: 8, Slug: "upstream-leaf", Name: jsonmap.JSON{"zh-CN": "上游末级分类"}},
+				},
+			})
+			return
+		}
 		if r.URL.Path != "/api/v1/upstream/products/101" {
 			http.NotFound(w, r)
 			return
@@ -155,11 +166,12 @@ func TestBatchImportUpstreamProductsWithoutCategory(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok": true,
 			"product": upstream.UpstreamProduct{
-				ID:          101,
-				CategoryID:  9,
-				Title:       jsonmap.JSON{"zh-CN": "上游商品"},
-				PriceAmount: "10.00",
-				IsActive:    true,
+				ID:               101,
+				CategoryID:       9,
+				Title:            jsonmap.JSON{"zh-CN": "上游商品"},
+				PriceAmount:      "10.00",
+				IsActive:         true,
+				ManualFormSchema: jsonmap.JSON{"version": "v1"},
 			},
 		})
 	})
@@ -184,6 +196,46 @@ func TestBatchImportUpstreamProductsWithoutCategory(t *testing.T) {
 	var mapping mappingdomain.Mapping
 	if err := db.Where("local_product_id = ? AND upstream_product_id = ?", imported.ID, 101).First(&mapping).Error; err != nil {
 		t.Fatalf("load imported product mapping failed: %v", err)
+	}
+
+	syncProduct := func() {
+		t.Helper()
+		body := fmt.Sprintf(`{"ids":[%d]}`, mapping.ID)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/product-mappings/batch-sync", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+		h.BatchSyncProductMappings(c)
+		var result struct {
+			Data struct {
+				SuccessCount int `json:"success_count"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil || result.Data.SuccessCount != 1 {
+			t.Fatalf("expected one synced product: %v, body=%s", err, w.Body.String())
+		}
+	}
+
+	syncProduct()
+	var synced productdomain.Product
+	if err := db.Preload("Category").First(&synced, imported.ID).Error; err != nil {
+		t.Fatalf("load synced product failed: %v", err)
+	}
+	if synced.IsActive || synced.Category.Slug != "upstream-leaf" || synced.Category.ParentID == 0 || !synced.Category.IsActive {
+		t.Fatalf("expected an inactive product assigned to the enabled leaf category, got %+v", synced)
+	}
+
+	manual := categorydomain.Category{Slug: "manual-category", NameJSON: jsonmap.JSON{"zh-CN": "手动分类"}, IsActive: true}
+	if err := db.Create(&manual).Error; err != nil {
+		t.Fatalf("create manually assigned category failed: %v", err)
+	}
+	if err := db.Model(&productdomain.Product{}).Where("id = ?", synced.ID).Update("category_id", manual.ID).Error; err != nil {
+		t.Fatalf("assign manual category failed: %v", err)
+	}
+	syncProduct()
+	if err := db.First(&synced, imported.ID).Error; err != nil || synced.CategoryID != manual.ID {
+		t.Fatalf("expected manual category %d to be kept, got %d, err=%v", manual.ID, synced.CategoryID, err)
 	}
 }
 

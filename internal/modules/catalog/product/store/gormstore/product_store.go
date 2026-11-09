@@ -302,6 +302,12 @@ func (r *ProductStore) QuickUpdate(id string, fields map[string]interface{}) err
 	return r.db.Model(&productdomain.Product{}).Where("id = ? AND deleted_at IS NULL", id).Updates(fields).Error
 }
 
+// SetCategoryIfUnassigned 填充空分类，兼容仍以 0 表示未分类的旧商品。
+func (r *ProductStore) SetCategoryIfUnassigned(productID, categoryID uint) error {
+	return r.db.Model(&productdomain.Product{}).Where("id = ?", productID).
+		Where("(category_id IS NULL OR category_id = 0)").Update("category_id", categoryID).Error
+}
+
 // Delete 删除商品
 func (r *ProductStore) Delete(id string) error {
 	return r.db.Model(&productdomain.Product{}).Where("id = ? AND deleted_at IS NULL", id).Update("deleted_at", time.Now()).Error

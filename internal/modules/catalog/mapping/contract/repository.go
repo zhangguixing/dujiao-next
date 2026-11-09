@@ -47,6 +47,7 @@ type ProductRepository interface {
 	GetByID(id string) (*productdomain.Product, error)
 	Update(item *productdomain.Product) error
 	QuickUpdate(id string, fields map[string]interface{}) error
+	SetCategoryIfUnassigned(productID, categoryID uint) error
 	CountBySlug(slug string, excludeID *string) (int64, error)
 }
 

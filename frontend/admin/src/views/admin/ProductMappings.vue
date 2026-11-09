@@ -599,7 +599,7 @@ const isCategoryAllSelected = (catId: number) => {
 const handleImportCategory = async (catId: number) => {
   if (!importConnectionId.value) return
   // Validate: must have autoCreateCategory or a selected local category
-  const localCatId = importCategoryId.value !== '__none__' ? Number(importCategoryId.value) : 0
+  const localCatId = !autoCreateCategory.value && importCategoryId.value !== '__none__' ? Number(importCategoryId.value) : 0
   if (!autoCreateCategory.value && localCatId === 0) {
     notifyError(t('productMappings.import.selectCategoryFirst'))
     return
@@ -650,7 +650,12 @@ const handleBatchImport = async () => {
   if (ids.length === 0) return
   importing.value = true
   importProgress.value = { done: 0, total: ids.length, success: 0 }
-  const categoryId = importCategoryId.value !== '__none__' ? Number(importCategoryId.value) : 0
+  const categoryId = !autoCreateCategory.value && importCategoryId.value !== '__none__' ? Number(importCategoryId.value) : 0
+  const importOptions = {
+    connection_id: Number(importConnectionId.value),
+    category_id: categoryId || undefined,
+    auto_create_category: autoCreateCategory.value,
+  }
   const allResults: { upstream_product_id: number; success: boolean; error?: string }[] = []
   let successCount = 0
 
@@ -660,9 +665,8 @@ const handleBatchImport = async () => {
       const batchIds = ids.slice(i, i + BATCH_SIZE)
       try {
         const res = await adminAPI.batchImportUpstreamProducts({
-          connection_id: Number(importConnectionId.value),
+          ...importOptions,
           upstream_product_ids: batchIds,
-          category_id: categoryId || undefined,
         })
         const result = res.data.data as { results?: typeof allResults; success_count?: number } | null
         const batchResults = result?.results || []
@@ -673,7 +677,7 @@ const handleBatchImport = async () => {
           // 后端不支持批量接口，逐条导入
           for (const id of batchIds) {
             try {
-              await adminAPI.importUpstreamProduct({ connection_id: Number(importConnectionId.value), upstream_product_id: id, category_id: categoryId || undefined })
+              await adminAPI.importUpstreamProduct({ ...importOptions, upstream_product_id: id })
               allResults.push({ upstream_product_id: id, success: true }); successCount++
             } catch (singleErr: any) {
               allResults.push({ upstream_product_id: id, success: false, error: singleErr?.response?.data?.message || singleErr?.message })
@@ -1020,11 +1024,11 @@ onMounted(() => { fetchConnections(); fetchCategories(); fetchMappings() })
 
           <!-- Category options: auto-create + local category selector -->
           <div v-if="importConnectionId" class="flex flex-col gap-4 lg:flex-row lg:items-end">
-            <div v-if="importViewMode === 'category' && upstreamCategoriesSupported" class="flex items-center gap-2">
+            <div v-if="upstreamCategoriesSupported" class="flex items-center gap-2">
               <Switch id="auto-create-cat" v-model="autoCreateCategory" />
               <Label for="auto-create-cat" class="text-xs font-medium text-muted-foreground cursor-pointer">{{ t('productMappings.import.autoCreateCategory') }}</Label>
             </div>
-            <div v-if="!autoCreateCategory || importViewMode === 'flat'" class="min-w-[200px] flex-1">
+            <div v-if="!autoCreateCategory" class="min-w-[200px] flex-1">
               <label class="mb-1.5 block text-xs font-medium text-muted-foreground">{{ t('productMappings.import.category') }}</label>
               <Select v-model="importCategoryId">
                 <SelectTrigger class="h-9 w-full"><SelectValue :placeholder="t('productMappings.import.categoryPlaceholder')" /></SelectTrigger>
