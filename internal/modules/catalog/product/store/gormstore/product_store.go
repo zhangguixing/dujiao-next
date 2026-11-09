@@ -3,6 +3,7 @@ package gormstore
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 	"time"
@@ -278,11 +279,26 @@ func (r *ProductStore) Create(product *productdomain.Product) error {
 // 而 SKU 删除是硬删除，级联 upsert 会把已删除的规格按原 ID 重新插回（issue #344）。
 // SKU 一律由 SKURepository 独占管理。
 func (r *ProductStore) Update(product *productdomain.Product) error {
-	return r.db.Omit(clause.Associations).Save(product).Error
+	if product.CategoryID != 0 {
+		return r.db.Omit(clause.Associations).Save(product).Error
+	}
+	// 覆盖嵌入商品的分类字段，将未分类保存为 NULL。
+	return r.db.Omit(clause.Associations).Save(&uncategorizedProduct{Product: product}).Error
 }
+
+type uncategorizedProduct struct {
+	*productdomain.Product
+	CategoryID *uint
+}
+
+func (uncategorizedProduct) TableName() string { return (productdomain.Product{}).TableName() }
 
 // QuickUpdate 快速更新商品指定字段
 func (r *ProductStore) QuickUpdate(id string, fields map[string]interface{}) error {
+	if fields["category_id"] == uint(0) {
+		fields = maps.Clone(fields)
+		fields["category_id"] = nil
+	}
 	return r.db.Model(&productdomain.Product{}).Where("id = ? AND deleted_at IS NULL", id).Updates(fields).Error
 }
 

@@ -12,7 +12,7 @@ import (
 // Product 商品表
 type Product struct {
 	ID                   uint                `gorm:"primarykey" json:"id"`                                                // 主键
-	CategoryID           uint                `gorm:"not null;index" json:"category_id"`                                   // 分类ID
+	CategoryID           uint                `gorm:"index;default:null" json:"category_id"`                               // 0 表示未分类，创建时使用数据库的 NULL 默认值
 	Slug                 string              `gorm:"uniqueIndex;not null" json:"slug"`                                    // 唯一标识
 	SeoMetaJSON          jsonmap.JSON        `gorm:"type:json" json:"seo_meta"`                                           // SEO 元数据
 	TitleJSON            jsonmap.JSON        `gorm:"type:json;not null" json:"title"`                                     // 多语言标题

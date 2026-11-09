@@ -4,6 +4,7 @@ package integrationtest
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -79,6 +80,7 @@ func TestMySQL(t *testing.T) {
 	require.NoError(t, db.Callback().Raw().Remove("test:record_schema_changes"))
 
 	t.Run("reseller active key", func(t *testing.T) { testMySQLResellerActiveKey(t, db) })
+	t.Run("optional product category", func(t *testing.T) { testMySQLOptionalProductCategory(t, db) })
 	t.Run("search and reports", func(t *testing.T) { testMySQLQueries(t, db) })
 	t.Run("payment and refund concurrency", func(t *testing.T) { testMySQLPayments(t, db) })
 }
@@ -134,6 +136,36 @@ func testMySQLResellerActiveKey(t *testing.T, db *gorm.DB) {
 	found, err = store.GetByApiKey("exactkey")
 	require.NoError(t, err)
 	require.Nil(t, found)
+}
+
+func testMySQLOptionalProductCategory(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	// Reproduce the existing schema with its foreign key and required category.
+	require.NoError(t, db.Exec("ALTER TABLE products MODIFY COLUMN category_id BIGINT UNSIGNED NOT NULL").Error)
+	category := categorydomain.Category{Slug: "import-category", NameJSON: jsonmap.JSON{"en-US": "Import category"}}
+	require.NoError(t, db.Create(&category).Error)
+	products := productstore.NewProductStore(db)
+	categorized := productdomain.Product{
+		CategoryID: category.ID,
+		Slug:       "categorized-import",
+		TitleJSON:  jsonmap.JSON{"en-US": "Categorized import"},
+	}
+	require.NoError(t, products.Create(&categorized))
+	require.NoError(t, migrations.AutoMigrate())
+	require.True(t, db.Migrator().HasConstraint(&productdomain.Product{}, "fk_products_category"))
+	require.NoError(t, db.Preload("Category").First(&categorized, categorized.ID).Error)
+	require.Equal(t, category.ID, categorized.Category.ID)
+
+	uncategorized := productdomain.Product{Slug: "uncategorized-import", TitleJSON: jsonmap.JSON{"en-US": "Uncategorized import"}}
+	require.NoError(t, products.Create(&uncategorized))
+	uncategorized.SortOrder = 10
+	require.NoError(t, products.Update(&uncategorized))
+	require.NoError(t, db.Where("category_id IS NULL AND sort_order = ?", 10).First(&uncategorized, uncategorized.ID).Error)
+	require.Zero(t, uncategorized.CategoryID)
+
+	categorizedID := strconv.FormatUint(uint64(categorized.ID), 10)
+	require.NoError(t, products.QuickUpdate(categorizedID, map[string]interface{}{"category_id": uint(0)}))
+	require.NoError(t, db.Where("category_id IS NULL").First(&productdomain.Product{}, categorized.ID).Error)
 }
 
 func testMySQLQueries(t *testing.T, db *gorm.DB) {

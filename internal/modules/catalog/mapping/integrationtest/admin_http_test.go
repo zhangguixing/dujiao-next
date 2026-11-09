@@ -79,7 +79,7 @@ func setupAdminHandlerTest(t *testing.T, upstreamHandler http.HandlerFunc) (*map
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
-	dsn := fmt.Sprintf("file:admin_product_mapping_handler_test_%d?mode=memory&cache=shared", time.Now().UnixNano())
+	dsn := fmt.Sprintf("file:admin_product_mapping_handler_test_%d?mode=memory&cache=shared&_pragma=foreign_keys(1)", time.Now().UnixNano())
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("open sqlite failed: %v", err)
@@ -143,6 +143,48 @@ func setupAdminHandlerTest(t *testing.T, upstreamHandler http.HandlerFunc) (*map
 
 	h := mappinghttp.NewAdminHandler(mappingService)
 	return h, db, conn.ID, server.Close
+}
+
+func TestBatchImportUpstreamProductsWithoutCategory(t *testing.T) {
+	h, db, connID, cleanup := setupAdminHandlerTest(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/upstream/products/101" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok": true,
+			"product": upstream.UpstreamProduct{
+				ID:          101,
+				CategoryID:  9,
+				Title:       jsonmap.JSON{"zh-CN": "上游商品"},
+				PriceAmount: "10.00",
+				IsActive:    true,
+			},
+		})
+	})
+	defer cleanup()
+
+	body := fmt.Sprintf(`{"connection_id":%d,"upstream_product_ids":[101]}`, connID)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/product-mappings/batch-import", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	h.BatchImportUpstreamProducts(c)
+
+	var imported productdomain.Product
+	if err := db.Where("category_id IS NULL AND is_active = ?", false).First(&imported).Error; err != nil {
+		t.Fatalf("expected an inactive product with no category: %v, body=%s", err, w.Body.String())
+	}
+	if imported.CategoryID != 0 {
+		t.Fatalf("expected an unassigned category ID, got %d", imported.CategoryID)
+	}
+	var mapping mappingdomain.Mapping
+	if err := db.Where("local_product_id = ? AND upstream_product_id = ?", imported.ID, 101).First(&mapping).Error; err != nil {
+		t.Fatalf("load imported product mapping failed: %v", err)
+	}
 }
 
 func TestBatchImportUpstreamProductsAutoCreatesCategory(t *testing.T) {
