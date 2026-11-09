@@ -4,15 +4,15 @@
     <!-- ==================== LIST MODE ==================== -->
     <template v-if="templateMode === 'list'">
       <!-- Hero Banner (shared with card mode) -->
-      <section v-if="showHeroSection" class="relative z-10 border-b pt-24 pb-10">
-        <div class="container mx-auto px-4">
-          <div class="relative overflow-hidden rounded-2xl border bg-card"
+      <section v-if="showHeroSection" class="relative z-10 pt-24 sm:pt-28">
+        <div class="storefront-container">
+          <div class="home-hero storefront-surface relative overflow-hidden" :class="{ 'home-hero--image': heroImage }"
             @touchstart="onBannerTouchStart"
             @touchend="onBannerTouchEnd">
             <Transition name="banner-fade" mode="out-in">
-              <img v-if="!bannerLoading && heroImage" :src="heroImage" :key="heroImage" class="absolute inset-0 h-full w-full object-cover" />
+              <img v-if="!bannerLoading && heroImage" :src="heroImage" :key="heroImage" alt="" class="absolute inset-0 h-full w-full object-cover" />
             </Transition>
-            <div class="absolute inset-0 bg-black/50"></div>
+            <div v-if="heroImage" class="home-hero-scrim absolute inset-0" aria-hidden="true"></div>
             <div v-if="bannerLoading" class="relative flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[240px] sm:p-6 md:min-h-[320px] md:p-10">
               <div class="space-y-3">
                 <div class="h-5 w-24 theme-skeleton rounded-full" style="background: rgba(255,255,255,0.35)"></div>
@@ -20,7 +20,7 @@
                 <div class="h-4 max-w-2xl theme-skeleton rounded-lg" style="background: rgba(255,255,255,0.3)"></div>
               </div>
             </div>
-            <div v-else class="relative flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[240px] sm:p-6 md:min-h-[320px] md:p-10">
+            <div v-else class="home-hero-content relative flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[240px] sm:p-6 md:min-h-[320px] md:p-10">
               <div v-if="bannerCount > 1" class="mb-3 flex items-center justify-end gap-2">
                 <button type="button"
                   class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-black/20 text-white transition hover:bg-black/35 md:h-9 md:w-9"
@@ -34,14 +34,14 @@
                 </button>
               </div>
               <div class="space-y-2 sm:space-y-3">
-                <span :class="heroBadgeClass">
+                <span v-if="heroBadge !== heroTitle" :class="heroBadgeClass">
                   <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
                   {{ heroBadge }}
                 </span>
-                <h1 class="max-w-4xl text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl md:text-3xl">
+                <h1 class="max-w-4xl text-xl font-semibold tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
                   {{ heroTitle }}
                 </h1>
-                <p class="max-w-3xl text-xs leading-relaxed text-gray-100 sm:text-sm">
+                <p class="max-w-3xl text-xs leading-relaxed opacity-90 sm:text-sm">
                   {{ heroSubtitle }}
                 </p>
               </div>
@@ -58,7 +58,7 @@
 
       <!-- Main: Left Categories + Right Product List -->
       <section class="relative z-10 pb-6" :class="showHeroSection ? 'pt-6' : 'pt-24'">
-        <div class="container mx-auto px-4">
+        <div class="storefront-container">
           <div class="flex flex-col lg:flex-row gap-6">
 
             <CategorySidebar
@@ -163,18 +163,18 @@
 
     <!-- ==================== CARD MODE (default) ==================== -->
     <template v-else>
-    <section v-if="showHeroSection" class="relative z-10 border-b pt-24 pb-10">
-      <div class="container mx-auto px-4">
-        <div class="relative overflow-hidden rounded-2xl border bg-card"
+    <section v-if="showHeroSection" class="relative z-10 pt-24 sm:pt-28">
+      <div class="storefront-container">
+        <div class="home-hero storefront-surface relative overflow-hidden" :class="{ 'home-hero--image': heroImage }"
           @touchstart="onBannerTouchStart"
           @touchend="onBannerTouchEnd">
           <!-- Banner image with fade transition -->
           <Transition name="banner-fade" mode="out-in">
-            <img v-if="!bannerLoading && heroImage" :src="heroImage" :key="heroImage" class="absolute inset-0 h-full w-full object-cover" />
+            <img v-if="!bannerLoading && heroImage" :src="heroImage" :key="heroImage" alt="" class="absolute inset-0 h-full w-full object-cover" />
           </Transition>
-          <div class="absolute inset-0 bg-black/50"></div>
+          <div v-if="heroImage" class="home-hero-scrim absolute inset-0" aria-hidden="true"></div>
 
-            <div v-if="bannerLoading" class="relative flex min-h-[260px] flex-col justify-between p-5 sm:min-h-[320px] sm:p-6 md:min-h-[420px] md:p-12">
+            <div v-if="bannerLoading" class="relative flex min-h-[260px] flex-col justify-between p-5 sm:min-h-[300px] sm:p-7 md:min-h-[340px] md:p-10">
             <div class="mb-4 flex items-center justify-end">
               <span :class="heroBadgeClass">
                 {{ t('common.loading') }}
@@ -193,7 +193,7 @@
             </div>
           </div>
 
-          <div v-else class="relative flex min-h-[260px] flex-col justify-between p-5 sm:min-h-[320px] sm:p-6 md:min-h-[420px] md:p-12">
+          <div v-else class="home-hero-content relative flex min-h-[260px] flex-col justify-between p-5 sm:min-h-[300px] sm:p-7 md:min-h-[340px] md:p-10">
             <div v-if="bannerCount > 1" class="mb-4 flex items-center justify-end gap-2">
               <button
                 type="button"
@@ -214,14 +214,14 @@
             </div>
 
             <div class="space-y-3 sm:space-y-4">
-              <span :class="heroBadgeClass">
+              <span v-if="heroBadge !== heroTitle" :class="heroBadgeClass">
                 <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
                 {{ heroBadge }}
               </span>
-              <h1 class="max-w-4xl text-2xl font-semibold tracking-[-0.02em] text-white sm:text-3xl md:text-[2.85rem]">
+              <h1 class="max-w-4xl text-2xl font-semibold tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-3xl md:text-[2.85rem]">
                 {{ heroTitle }}
               </h1>
-              <p class="max-w-3xl text-xs leading-relaxed text-gray-100 sm:text-sm md:text-base">
+              <p class="max-w-3xl text-xs leading-relaxed opacity-90 sm:text-sm md:text-base">
                 {{ heroSubtitle }}
               </p>
             </div>
@@ -230,18 +230,18 @@
               <button
                 type="button"
                 @click="goToHeroLink"
-                class="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 transition hover:scale-105 sm:min-h-[44px] sm:px-5 sm:py-3"
+                class="home-hero-primary inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-semibold sm:px-5"
               >
                 {{ heroPrimaryButtonText }}
                 <ArrowRight class="h-4 w-4" />
               </button>
-              <router-link
+              <a
                 v-if="!hasHeroLink"
-                to="/products"
-                class="inline-flex min-h-[40px] items-center rounded-lg border border-white/30 px-4 py-2.5 text-sm font-medium text-white transition hover:border-white hover:bg-white/10 sm:min-h-[44px] sm:px-5 sm:py-3"
+                href="#featured"
+                class="home-hero-secondary inline-flex min-h-11 items-center whitespace-nowrap rounded-lg border px-4 py-2.5 text-sm font-medium sm:px-5"
               >
-                {{ t('home.featured.viewAll') }}
-              </router-link>
+                {{ t('home.featured.title') }}
+              </a>
             </div>
 
             <div v-if="bannerCount > 1" class="mt-5 flex items-center gap-2">
@@ -260,23 +260,37 @@
       </div>
     </section>
 
-    <section id="featured" class="relative z-10 pb-14" :class="showHeroSection ? 'pt-14' : 'pt-32 md:pt-36'">
-      <div class="container mx-auto px-4">
-        <div class="mb-8 flex items-end justify-between gap-4">
+    <section id="featured" class="relative z-10 scroll-mt-16 pb-14" :class="showHeroSection ? 'pt-8 sm:pt-12' : 'pt-24 sm:pt-28'">
+      <div class="storefront-container">
+        <div class="storefront-page-heading flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 class="theme-section-heading text-3xl md:text-4xl">{{ t('home.featured.title') }}</h2>
-            <p class="mt-2 text-sm text-muted-foreground">{{ t('home.featured.description') }}</p>
+            <component :is="showHeroSection ? 'h2' : 'h1'" class="storefront-page-title">{{ t('home.featured.title') }}</component>
+            <p class="storefront-page-subtitle">{{ t('home.featured.description') }}</p>
           </div>
           <router-link
-                v-if="!hasHeroLink"
-                to="/products"
-            class="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            to="/products"
+            class="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg text-sm font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
           >
             {{ t('home.featured.viewAll') }}
+            <ArrowRight class="size-4" aria-hidden="true" />
           </router-link>
         </div>
 
-        <div v-if="products.length > 0" class="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div v-if="featuredLoading" class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4" :aria-label="t('common.loading')" aria-busy="true">
+          <div v-for="index in 4" :key="index" class="storefront-surface overflow-hidden">
+            <div class="theme-skeleton aspect-[4/3]"></div>
+            <div class="space-y-3 p-4">
+              <div class="theme-skeleton h-4 w-3/4"></div>
+              <div class="theme-skeleton h-5 w-1/2"></div>
+            </div>
+          </div>
+        </div>
+        <EmptyState v-else-if="featuredError" icon="alert" :title="t('common.api.requestFailed')">
+          <template #action>
+            <Button variant="secondary" @click="loadFeaturedProducts">{{ t('errorBoundary.retry') }}</Button>
+          </template>
+        </EmptyState>
+        <div v-else-if="products.length > 0" class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
           <ProductCard
             v-for="(product, idx) in products"
             :key="product.id"
@@ -298,7 +312,7 @@
     <hr class="theme-section-divider mx-4 md:mx-auto md:max-w-6xl" />
 
     <section class="relative z-10 py-12">
-      <div class="container mx-auto px-4">
+      <div class="storefront-container">
         <div class="mb-6 flex items-end justify-between gap-4">
           <div>
             <h2 class="theme-section-heading text-[1.7rem]">{{ t('home.latest.title') }}</h2>
@@ -366,6 +380,7 @@ import ProductQuickBuy from '../components/ProductQuickBuy.vue'
 import CategorySidebar from '../components/CategorySidebar.vue'
 import PaginationNav from '../components/PaginationNav.vue'
 import EmptyState from '../components/EmptyState.vue'
+import { Button } from '@/components/ui/button'
 import AnnouncementModal from '../components/AnnouncementModal.vue'
 import { useAnnouncement, type HomeAnnouncement } from '../composables/useAnnouncement'
 
@@ -385,6 +400,8 @@ const latestSectionVisible = computed(() => blogEnabled.value || noticeEnabled.v
 
 // ==================== Shared State ====================
 const products = ref<any[]>([])
+const featuredLoading = ref(true)
+const featuredError = ref(false)
 const posts = ref<any[]>([])
 const quickBuyProduct = ref<any>(null)
 const quickBuyVisible = ref(false)
@@ -477,11 +494,16 @@ const goToPost = (slug: string) => {
 }
 
 const loadFeaturedProducts = async () => {
+  featuredLoading.value = true
+  featuredError.value = false
   try {
     const response = await productAPI.list({ page: 1, page_size: 15 })
     products.value = response.data.data || []
   } catch (error) {
+    featuredError.value = true
     console.error('Failed to load products:', error)
+  } finally {
+    featuredLoading.value = false
   }
 }
 
@@ -524,6 +546,28 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.home-hero {
+  background: color-mix(in oklab, var(--ui-bg-elevated) 84%, var(--ui-accent-soft));
+  color: var(--ui-text-primary);
+}
+.home-hero--image { color: var(--ui-text-on-accent); }
+.home-hero:not(.home-hero--image) .home-hero-content { min-height: 0; }
+.home-hero-scrim {
+  background: linear-gradient(90deg, rgb(10 16 25 / 0.88), rgb(10 16 25 / 0.64) 70%, rgb(10 16 25 / 0.38));
+}
+.home-hero-primary {
+  background: var(--ui-accent);
+  color: var(--ui-text-on-accent);
+}
+.home-hero-primary:hover { background: var(--ui-accent-hover); }
+.home-hero-secondary { border-color: var(--ui-border-strong); }
+.home-hero-secondary:hover { background: var(--ui-bg-soft); }
+.home-hero--image .home-hero-secondary { border-color: currentColor; }
+.home-hero--image .home-hero-secondary:hover { background: rgb(10 16 25 / 0.35); }
+.home-hero :is(a, button):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
 .banner-fade-enter-active,
 .banner-fade-leave-active {
   transition: opacity 300ms ease;

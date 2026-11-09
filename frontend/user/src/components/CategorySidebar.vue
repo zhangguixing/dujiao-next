@@ -1,7 +1,7 @@
 <template>
   <!-- Mobile Filter Button -->
   <Button variant="secondary" @click="$emit('update:showDrawer', true)"
-    class="lg:hidden gap-2 rounded-xl text-sm font-medium min-h-[44px]">
+    class="lg:hidden self-start gap-2 rounded-xl text-sm font-medium min-h-[44px]" :aria-expanded="showDrawer">
     <Filter class="w-4 h-4" />
     {{ t('products.filter') }}
     <span v-if="selectedCategory" class="w-2 h-2 rounded-full bg-primary"></span>
@@ -36,7 +36,7 @@
             <span class="w-1 h-5 bg-primary rounded-full"></span>
             {{ showSearch ? t('products.filter') : t('products.categories') }}
           </span>
-          <Button variant="ghost" size="icon" class="min-w-[44px] min-h-[44px] [&_svg]:size-5" @click="$emit('update:showDrawer', false)">
+          <Button variant="ghost" size="icon" class="min-w-[44px] min-h-[44px] [&_svg]:size-5" :aria-label="t('products.closeFilter')" @click="$emit('update:showDrawer', false)">
             <X />
           </Button>
         </div>
@@ -87,6 +87,8 @@
                   type="button"
                   class="h-10 w-10 shrink-0 self-center rounded-full border flex items-center justify-center shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
                   :class="expandedParentIds.includes(group.id) ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card/70 text-muted-foreground hover:text-foreground'"
+                  :aria-label="getLocalizedText(group.name)"
+                  :aria-expanded="expandedParentIds.includes(group.id)"
                   @click.stop="$emit('toggleParent', group.id)"
                 >
                   <ChevronRight class="w-4 h-4 transition-transform duration-200"
@@ -116,7 +118,7 @@
 
   <!-- Desktop Sidebar -->
   <aside class="hidden lg:block flex-shrink-0" :class="compact ? 'lg:w-60' : 'lg:w-64'">
-    <div class="bg-card backdrop-blur-xl border rounded-2xl sticky top-24" :class="compact ? 'p-5' : 'p-6'">
+    <div class="storefront-surface sticky top-24" :class="compact ? 'p-4' : 'p-5'">
       <!-- Search (desktop, only for Products page) -->
       <div v-if="showSearch" :class="compact ? 'mb-4' : 'mb-6'">
         <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -176,6 +178,8 @@
                   compact ? 'h-9 w-9' : 'h-10 w-10',
                   expandedParentIds.includes(group.id) ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card/70 text-muted-foreground hover:text-foreground'
                 ]"
+                :aria-label="getLocalizedText(group.name)"
+                :aria-expanded="expandedParentIds.includes(group.id)"
                 @click.stop="$emit('toggleParent', group.id)"
               >
                 <ChevronRight :class="[

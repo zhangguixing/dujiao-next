@@ -1,13 +1,15 @@
 <template>
-  <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-xl border-t theme-safe-bottom">
-    <div class="flex items-stretch h-14">
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t theme-safe-bottom">
+    <div class="flex items-stretch h-(--storefront-tabbar-height) px-2">
       <router-link
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
-        class="flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors min-h-[44px]"
-        :class="isActive(item.path) ? 'text-primary font-semibold' : 'text-muted-foreground'"
+        class="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 rounded-lg text-xs whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
+        :class="isActive(item.path) ? 'text-primary font-semibold' : 'text-ink-secondary'"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
       >
+        <span class="flex h-7 min-w-11 items-center justify-center rounded-full" :class="{ 'bg-primary-soft': isActive(item.path) }">
         <!-- Home -->
         <Home v-if="item.icon === 'home'" class="w-5 h-5" />
         <!-- Products -->
@@ -22,6 +24,7 @@
         </div>
         <!-- Me -->
         <User v-else-if="item.icon === 'me'" class="w-5 h-5" />
+        </span>
         <span>{{ t(item.label) }}</span>
       </router-link>
     </div>
@@ -58,6 +61,7 @@ const navItems = computed(() => {
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
+  if (path === '/products' && route.path.startsWith('/categories/')) return true
+  return route.path === path || route.path.startsWith(`${path}/`)
 }
 </script>

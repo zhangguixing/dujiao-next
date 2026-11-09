@@ -274,30 +274,86 @@ html[data-telegram-mini-app="true"] body {
 }
 
 @layer components {
+  .storefront-shell {
+    --storefront-tabbar-height: 3.75rem;
+    --storefront-bottom-inset: env(safe-area-inset-bottom, 0px);
+    --storefront-top-inset: env(safe-area-inset-top, 0px);
+    padding-top: var(--storefront-top-inset);
+    padding-bottom: calc(var(--storefront-tabbar-height) + var(--storefront-bottom-inset));
+  }
+
+  .storefront-navbar {
+    padding-top: calc(0.75rem + var(--storefront-top-inset));
+  }
+
+  @media (max-width: 63.999rem) {
+    .storefront-shell:has(.storefront-purchase-bar) {
+      padding-bottom: calc(var(--storefront-tabbar-height) + var(--storefront-bottom-inset) + 3.875rem);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .storefront-shell { padding-bottom: 0; }
+  }
+
+  .storefront-container {
+    width: min(100%, 80rem);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 2rem);
+  }
+
+  .storefront-page {
+    padding-block-start: clamp(5.75rem, 9vw, 7rem);
+    padding-block-end: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .storefront-page-heading {
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+    padding-bottom: clamp(1rem, 2vw, 1.5rem);
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .storefront-page-title {
+    font-size: clamp(1.875rem, 4vw, 3rem);
+    font-weight: 750;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+  }
+
+  .storefront-page-subtitle {
+    max-width: 42rem;
+    margin-top: 0.625rem;
+    color: var(--ui-text-secondary);
+    line-height: 1.6;
+  }
+
+  .storefront-surface {
+    background: var(--ui-bg-elevated);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-xl);
+    box-shadow: var(--ui-shadow-1);
+  }
+
   .theme-overlay {
     background-color: var(--ui-bg-overlay-strong);
   }
 
   .theme-wordmark {
-    @apply inline-flex items-center rounded-xl border px-3.5 sm:px-4;
+    @apply inline-flex items-center rounded-md;
     min-height: 2.5rem;
     max-width: min(56vw, 20rem);
-    background-color: color-mix(in oklab, var(--ui-bg-elevated) 90%, var(--ui-accent-soft) 10%);
-    border-color: color-mix(in oklab, var(--ui-accent) 22%, var(--ui-border));
-    box-shadow: var(--ui-shadow-1);
     color: var(--ui-text-primary);
-    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    transition: color var(--ui-duration-fast) var(--ui-ease-out);
   }
 
   .theme-wordmark:hover {
     color: var(--ui-accent-hover);
-    border-color: color-mix(in oklab, var(--ui-accent) 42%, transparent);
-    background-color: color-mix(in oklab, var(--ui-accent-soft) 72%, var(--ui-bg-elevated));
   }
 
   .theme-wordmark:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px var(--ui-focus-ring);
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 3px;
   }
 
   .theme-wordmark-text {
@@ -417,6 +473,21 @@ html[data-telegram-mini-app="true"] body {
   /* Safe area bottom padding for fixed elements */
   .theme-safe-bottom {
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storefront-shell *,
+  .storefront-shell *::before,
+  .storefront-shell *::after,
+  .product-quick-buy *,
+  .product-quick-buy {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 }
 

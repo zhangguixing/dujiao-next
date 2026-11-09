@@ -1,9 +1,9 @@
 <template>
   <nav
-    class="fixed top-0 left-0 right-0 z-50 bg-card/80 border-b backdrop-blur-md transition-all"
-    :class="scrolled ? 'py-2 shadow-lg' : 'py-4'"
+    class="storefront-navbar fixed top-0 left-0 right-0 z-50 bg-card border-b pb-3 transition-shadow"
+    :class="{ 'shadow-soft': scrolled }"
     :style="{ transitionDuration: 'var(--ui-duration-normal)' }">
-    <div class="container mx-auto px-4 flex items-center justify-between gap-4">
+    <div class="storefront-container flex items-center justify-between gap-3">
       <!-- Logo -->
       <router-link to="/" class="theme-wordmark group relative gap-3" :title="brandSiteName">
         <img

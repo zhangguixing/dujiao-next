@@ -22,6 +22,7 @@ export function useProductList(options: UseProductListOptions = {}) {
   const route = useRoute()
 
   const loading = ref(true)
+  const loadError = ref(false)
   const products = ref<any[]>([])
   const categories = ref<PublicCategory[]>([])
   const selectedCategory = ref<number | null>(null)
@@ -29,6 +30,7 @@ export function useProductList(options: UseProductListOptions = {}) {
   const currentPage = ref(1)
   const pageSize = ref(defaultPageSize)
   const totalPages = ref(0)
+  const totalProducts = ref(0)
   const showFilterDrawer = ref(false)
   const expandedParentIds = ref<number[]>([])
 
@@ -125,6 +127,7 @@ export function useProductList(options: UseProductListOptions = {}) {
 
   const loadProducts = async () => {
     loading.value = true
+    loadError.value = false
     resetListScrollSignal()
     const page = currentPage.value
     const keyword = searchQuery.value.trim()
@@ -143,6 +146,7 @@ export function useProductList(options: UseProductListOptions = {}) {
       }
       const response = await productAPI.list(params)
       products.value = response.data.data || []
+      totalProducts.value = response.data.pagination?.total ?? products.value.length
       if (response.data.pagination) {
         totalPages.value = response.data.pagination.total_page || 0
       }
@@ -154,6 +158,7 @@ export function useProductList(options: UseProductListOptions = {}) {
         return
       }
     } catch (error) {
+      loadError.value = true
       console.error('Failed to load products:', error)
     } finally {
       loading.value = false
@@ -313,6 +318,7 @@ export function useProductList(options: UseProductListOptions = {}) {
 
   return {
     loading,
+    loadError,
     products,
     categories,
     selectedCategory,
@@ -320,6 +326,7 @@ export function useProductList(options: UseProductListOptions = {}) {
     currentPage,
     pageSize,
     totalPages,
+    totalProducts,
     showFilterDrawer,
     expandedParentIds,
     categoryGroups,

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="product-detail-page min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
+    class="storefront-page min-h-screen">
+    <div class="storefront-container">
       <!-- Loading Skeleton -->
       <div v-if="loading" class="space-y-8">
         <div class="h-5 w-48 rounded theme-skeleton"></div>
@@ -34,7 +34,7 @@
       <!-- Product Content -->
       <div v-else-if="product">
         <BreadcrumbNav
-          class="mb-8"
+          class="mb-5 md:mb-7"
           :items="[
             { label: t('nav.home'), to: '/' },
             { label: t('nav.products'), to: '/products' },
@@ -44,8 +44,8 @@
 
         <!-- Main Info Card -->
         <div
-          class="bg-card backdrop-blur-xl border rounded-3xl overflow-hidden mb-8 shadow-2xl">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
+          class="storefront-surface mb-8 overflow-hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <!-- Product Images (Left) -->
             <ProductImageGallery
               :images="images"
@@ -55,7 +55,7 @@
             />
 
             <!-- Product Info (Right) -->
-            <div class="p-6 md:p-8 lg:p-12 flex flex-col justify-center">
+            <div class="flex min-w-0 flex-col p-4 sm:p-6 lg:p-9">
               <div class="mb-6">
                 <div v-if="categoryName" class="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
                   {{ t('productDetail.categoryLabel') }} · {{ categoryName }}
@@ -93,7 +93,7 @@
                   </Badge>
                 </div>
 
-                <div class="mb-8 border-b pb-8" ref="priceSection">
+                <div class="mb-8 border-b pb-8" ref="priceSection" aria-live="polite" aria-atomic="true">
                   <div class="mb-3 flex flex-wrap items-center gap-2">
                     <span class="text-sm text-muted-foreground">{{ t('products.price') }}</span>
                     <Badge v-if="(selectedSku && hasSkuPromotionPrice(selectedSku)) || (!selectedSku && hasPromotionPrice(product))" variant="danger">
@@ -214,36 +214,14 @@
                   </ul>
                 </div>
 
-                <div v-if="activeSkus.length" class="mb-8">
-                  <h2 class="mb-3 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                    {{ t('productDetail.skuTitle') }}
-                  </h2>
-                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <button
-                      v-for="sku in activeSkus"
-                      :key="sku.id"
-                      type="button"
-                      class="flex flex-col items-start rounded-xl border px-3 py-2 text-sm transition-all min-h-[44px]"
-                      :class="[
-                        normalizeSkuId(sku.id) === selectedSkuId ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/30' : 'border bg-secondary text-foreground',
-                        isSkuPurchasable(sku) ? 'hover:-translate-y-0.5' : 'cursor-not-allowed opacity-55 border-dashed',
-                      ]"
-                      :disabled="!isSkuPurchasable(sku)"
-                      @click="selectedSkuId = normalizeSkuId(sku.id)"
-                    >
-                      <span class="font-semibold leading-tight">{{ skuDisplayText(sku) }}</span>
-                      <span
-                        class="mt-1 rounded-full border px-2 py-0.5 text-[11px]"
-                        :class="skuStockBadgeClass(sku)"
-                      >
-                        {{ skuStockText(sku) }}
-                      </span>
-                    </button>
-                  </div>
-                  <p v-if="requiresSKUSelection" class="mt-2 text-xs text-amber-500">
-                    {{ t('productDetail.skuRequired') }}
-                  </p>
-                </div>
+                <ProductSkuPicker
+                  v-if="activeSkus.length"
+                  v-model="selectedSkuId"
+                  :product="product"
+                  :skus="activeSkus"
+                  :is-purchasable="isSkuPurchasable"
+                  class="mb-8"
+                />
 
                 <div class="mb-8">
                   <h2 class="mb-3 text-sm font-bold uppercase tracking-widest text-muted-foreground">
@@ -411,7 +389,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Lock, Minus, Pencil, Plus, RotateCw, Tag, UserPlus, Zap } from 'lucide-vue-next'
 import { getImageUrl } from '../utils/image'
@@ -419,6 +397,7 @@ import { processHtmlForDisplay } from '../utils/content'
 import { useProductDetail } from '../composables/useProductDetail'
 import ProductImageGallery from '../components/product/ProductImageGallery.vue'
 import ProductMobileBar from '../components/product/ProductMobileBar.vue'
+import ProductSkuPicker from '../components/product/ProductSkuPicker.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -434,6 +413,7 @@ let observer: IntersectionObserver | null = null
 
 const setupMobileBarObserver = () => {
   if (observer) observer.disconnect()
+  showMobileBar.value = false
   if (!purchaseActionsRef.value) return
   observer = new IntersectionObserver(
     (entries) => {
@@ -447,14 +427,13 @@ const setupMobileBarObserver = () => {
   observer.observe(purchaseActionsRef.value)
 }
 
-// 全部业务逻辑由 useProductDetail 提供（与 vault 模板共用，保证功能一致）
 const {
   getLocalizedText, siteCurrency, formatPrice,
   getPurchaseTypeLabel, getFulfillmentTypeLabel, getStockBadgeVariant, getStockStatusLabel,
   hasPromotionPrice, getPromotionPriceAmount, getPromotionSaveAmount,
   hasSkuPromotionPrice, getSkuPromotionSaveAmount,
   hasPromotionRules, getPromotionRules,
-  formatPromotionRule, formatWholesaleTier, formatRelatedPostDate, normalizeSkuId,
+  formatPromotionRule, formatWholesaleTier, formatRelatedPostDate,
   loading, product, relatedPosts, currentImage, selectedSkuId, quantity, purchaseWarning,
   activeSkus, selectedSku,
   selectedSkuMemberPrice, hasMemberPrice,
@@ -462,9 +441,9 @@ const {
   selectedSkuWholesaleRules,
   selectedSkuPromotionPrice, selectedSkuPromotionFinalIsMember, selectedSkuPromotionFinalPrice,
   showSelectedSkuMemberBadge,
-  isSkuPurchasable, skuDisplayText, skuStockText, skuStockBadgeClass,
+  isSkuPurchasable,
   quantityEffectiveLimit, quantityEffectiveMin, handleQuantityInput,
-  requiresLogin, requiresSKUSelection, canPurchase, cannotPurchaseReason,
+  requiresLogin, canPurchase, cannotPurchaseReason,
   categoryName, images,
   backToListTo,
   addToCart, buyNow, goLogin, loadProduct,
@@ -472,7 +451,9 @@ const {
   mobileBarShowSkuPromotionPrice, mobileBarSkuPromotionPriceDisplay,
   mobileBarShowSkuPrice, mobileBarSkuPriceDisplay,
   mobileBarShowProductPromotionPrice, mobileBarProductPromotionPriceDisplay, mobileBarProductPriceDisplay,
-} = useProductDetail({ onLoaded: () => setupMobileBarObserver() })
+} = useProductDetail()
+
+watch(purchaseActionsRef, setupMobileBarObserver, { flush: 'post' })
 
 onUnmounted(() => {
   if (observer) {

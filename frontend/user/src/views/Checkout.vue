@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
-      <div class="mb-8">
-        <h1 class="mb-2 text-3xl font-black text-foreground">{{ t('checkout.title') }}</h1>
-        <p class="text-sm text-muted-foreground">{{ t('checkout.subtitle') }}</p>
-      </div>
+  <div class="storefront-page min-h-screen">
+    <div class="storefront-container">
+      <header class="storefront-page-heading">
+        <h1 class="storefront-page-title">{{ t('checkout.title') }}</h1>
+        <p class="storefront-page-subtitle">{{ t('checkout.subtitle') }}</p>
+      </header>
 
       <CheckoutSteps
         class="mb-8"
@@ -20,8 +20,8 @@
         action-to="/products"
       />
 
-      <div v-else class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div class="space-y-6 lg:col-span-2">
+      <div v-else class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,25rem)] lg:gap-7">
+        <div class="min-w-0 space-y-5">
           <div class="rounded-2xl border bg-card text-card-foreground p-6">
             <h2 class="mb-4 text-lg font-bold text-foreground">{{ t('checkout.itemsTitle') }}</h2>
             <div class="space-y-4">
@@ -169,7 +169,7 @@
           </div>
         </div>
 
-        <div class="h-fit rounded-2xl border bg-card text-card-foreground p-6 lg:sticky lg:top-24">
+        <div class="storefront-surface min-w-0 p-5 lg:sticky lg:top-24 lg:p-6">
           <h2 class="mb-4 text-lg font-bold text-foreground">{{ t('checkout.submitTitle') }}</h2>
           <div class="mb-4 rounded-lg border bg-secondary p-3 text-xs text-muted-foreground">
             {{ t('checkout.submitHint') }}

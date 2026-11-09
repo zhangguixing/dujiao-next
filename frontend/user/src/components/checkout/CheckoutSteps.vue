@@ -1,33 +1,33 @@
 <template>
   <ol
-    class="rounded-2xl border bg-card/80 p-4 backdrop-blur flex items-center list-none"
+    class="storefront-surface flex list-none items-start p-3 sm:p-4"
     :aria-label="t('checkoutSteps.label')"
   >
     <template v-for="(step, idx) in steps" :key="step.key">
       <li
-        class="flex items-center gap-2"
-        :class="idx === 0 ? '' : 'flex-1'"
+        class="relative flex min-w-0 flex-1 flex-col items-center gap-1.5"
         :aria-current="step.status === 'current' ? 'step' : undefined"
       >
-        <div
+        <span
           v-if="idx > 0"
           aria-hidden="true"
-          class="flex-1 h-0.5 rounded-full transition-colors"
+          class="absolute top-3.5 right-1/2 -left-1/2 h-px"
           :class="step.status !== 'upcoming' ? 'bg-primary' : 'bg-muted'"
-        ></div>
-        <div class="flex items-center gap-2 shrink-0">
+        ></span>
+        <div class="relative z-10 flex min-w-0 flex-col items-center gap-1.5">
           <span
-            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors"
+            class="flex size-7 items-center justify-center rounded-full border text-xs font-semibold"
+            aria-hidden="true"
             :class="step.status !== 'upcoming'
               ? 'bg-primary text-primary-foreground border-transparent'
-              : 'border-border text-muted-foreground'"
+              : 'border-border bg-card text-ink-secondary'"
           >
             <Check v-if="step.status === 'done'" class="w-3.5 h-3.5" :stroke-width="3" />
             <span v-else>{{ idx + 1 }}</span>
           </span>
           <span
-            class="text-sm font-medium hidden sm:inline"
-            :class="step.status !== 'upcoming' ? 'text-foreground' : 'text-muted-foreground'"
+            class="whitespace-nowrap text-center text-xs sm:text-sm"
+            :class="step.status === 'current' ? 'font-semibold text-foreground' : 'text-ink-secondary'"
           >
             {{ step.label }}
           </span>

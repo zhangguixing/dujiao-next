@@ -12,7 +12,7 @@
     >
       <div
         v-if="visible"
-        class="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]"
+        class="product-quick-buy fixed inset-0 z-50 bg-black/40"
         @click="close"
       />
     </Transition>
@@ -33,18 +33,21 @@
     >
       <div
         v-if="visible"
-        class="fixed z-50 inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center md:p-6"
+        class="product-quick-buy fixed z-50 inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center md:p-6"
         @click.self="close"
       >
-        <div
+        <FocusScope
+          trapped
+          loop
           role="dialog"
           aria-modal="true"
+          :aria-label="t('quickBuy.title')"
           class="
-            w-full max-h-[85vh] flex flex-col
+            w-full max-h-[85dvh] flex flex-col
             rounded-t-2xl md:rounded-2xl
-            bg-card/95 backdrop-blur-xl text-card-foreground border-t md:border
+            bg-card text-card-foreground border-t md:border
             shadow-2xl
-            md:max-w-md md:max-h-[75vh]
+            md:max-w-md md:max-h-[75dvh]
           "
           @click.stop
         >
@@ -56,7 +59,7 @@
           <!-- Desktop header bar -->
           <div class="hidden md:flex items-center justify-between px-5 pt-4 pb-0 shrink-0">
             <h2 class="text-sm font-semibold text-foreground">{{ t('quickBuy.title') }}</h2>
-            <Button type="button" variant="ghost" size="icon" class="-mr-1 text-muted-foreground" @click="close">
+            <Button type="button" variant="ghost" size="icon" class="-mr-1 size-11 text-muted-foreground" :aria-label="t('common.close')" @click="close">
               <X />
             </Button>
           </div>
@@ -106,7 +109,7 @@
                 </div>
 
                 <!-- Price -->
-                <div class="mt-auto pt-1">
+                <div class="mt-auto pt-1" aria-live="polite" aria-atomic="true">
                   <template v-if="selectedSku && hasSelectedSkuWholesalePrice">
                     <span
                       class="text-lg md:text-xl font-bold"
@@ -159,7 +162,7 @@
               </div>
 
               <!-- Mobile close -->
-              <Button type="button" variant="ghost" size="icon" class="md:hidden self-start -mr-1 text-muted-foreground" @click="close">
+              <Button type="button" variant="ghost" size="icon" class="md:hidden self-start -mr-1 size-11 text-muted-foreground" :aria-label="t('common.close')" @click="close">
                 <X />
               </Button>
             </div>
@@ -199,49 +202,14 @@
               </ul>
             </div>
 
-            <!-- SKU Selection -->
-            <div v-if="activeSkus.length > 1" class="mb-4">
-              <div class="mb-2 text-xs font-medium text-muted-foreground">
-                {{ t('quickBuy.selectSku') }}
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="sku in activeSkus"
-                  :key="sku.id"
-                  type="button"
-                  class="rounded-lg border px-3 py-1.5 text-[13px] transition-all"
-                  :class="[
-                    normalizeSkuId(sku.id) === selectedSkuId
-                      ? 'border-primary/45 bg-primary/10 ring-1 ring-primary/30 font-semibold'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium',
-                    isSkuPurchasable(sku) ? 'cursor-pointer' : 'cursor-not-allowed opacity-45 border-dashed',
-                  ]"
-                  :disabled="!isSkuPurchasable(sku)"
-                  @click="selectedSkuId = normalizeSkuId(sku.id)"
-                >
-                  <span>{{ skuDisplayText(sku) }}</span>
-                  <span
-                    v-if="!isSkuPurchasable(sku)"
-                    class="ml-1 text-[10px] opacity-70"
-                  >({{ t('productDetail.skuStockOut') }})</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Selected SKU stock info -->
-            <div v-if="selectedSku" class="mb-4 flex items-center gap-2 text-xs">
-              <span class="text-muted-foreground">{{ t('quickBuy.stock') }}:</span>
-              <span
-                class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium"
-                :class="skuStockBadgeClass(selectedSku)"
-              >
-                <span
-                  class="w-1.5 h-1.5 rounded-full"
-                  :class="skuStockDotClass(selectedSku)"
-                />
-                {{ skuStockText(selectedSku) }}
-              </span>
-            </div>
+            <ProductSkuPicker
+              v-if="activeSkus.length"
+              v-model="selectedSkuId"
+              :product="product"
+              :skus="activeSkus"
+              :is-purchasable="isSkuPurchasable"
+              class="mb-4"
+            />
 
             <!-- Quantity -->
             <div class="mb-4 flex items-center gap-3">
@@ -320,7 +288,7 @@
               </Button>
             </div>
           </div>
-        </div>
+        </FocusScope>
       </div>
     </Transition>
   </Teleport>
@@ -331,14 +299,15 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAppStore } from '../stores/app'
+import { FocusScope } from 'reka-ui'
 import { useCartStore } from '../stores/cart'
 import { useBuyNowStore } from '../stores/buyNow'
 import { useUserAuthStore } from '../stores/userAuth'
 import { useUserProfileStore } from '../stores/userProfile'
 import { getFirstImageUrl, getImageUrl } from '../utils/image'
-import { normalizeSkuId, buildSkuDisplayText } from '../utils/sku'
-import { resolveSkuAvailableStock, resolveSkuStockDisplay, type PublicStockDisplay } from '../utils/publicStock'
+import { normalizeSkuId } from '../utils/sku'
+import { resolveSkuAvailableStock } from '../utils/publicStock'
+import ProductSkuPicker from './product/ProductSkuPicker.vue'
 import { useLocalized, useProductLabels } from '../composables/useProduct'
 import { toast } from '../composables/useToast'
 import { X, Image as ImageIcon, Tag, Minus, Plus, ShoppingCart } from 'lucide-vue-next'
@@ -357,7 +326,6 @@ const emit = defineEmits<{
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
-const appStore = useAppStore()
 const cartStore = useCartStore()
 const buyNowStore = useBuyNowStore()
 const userAuthStore = useUserAuthStore()
@@ -591,56 +559,6 @@ watch(() => [props.product, props.visible], () => {
     ensureMemberLevels()
   }
 }, { immediate: true })
-
-const skuStockText = (sku: any) => {
-  const display = resolveSkuStockDisplay(props.product, sku)
-  return formatSkuStockDisplay(display)
-}
-
-const formatSkuStockDisplay = (display: PublicStockDisplay) => {
-  switch (display.kind) {
-    case 'unlimited':
-      return t('productDetail.skuStockUnlimited')
-    case 'out':
-      return t('productDetail.skuStockOut')
-    case 'remaining':
-      return t('productDetail.skuStockRemaining', { count: display.count })
-    case 'low_stock':
-      return t('productDetail.skuStockLow')
-    case 'hidden':
-      return t('productDetail.skuStockHidden')
-    case 'range':
-      return t('productDetail.skuStockRange', { min: display.min, max: display.max })
-    case 'range_plus':
-      return t('productDetail.skuStockRangePlus', { min: display.min })
-    case 'in_stock':
-    default:
-      return t('productDetail.skuStockInStock')
-  }
-}
-
-const skuStockBadgeClass = (sku: any) => {
-  const display = resolveSkuStockDisplay(props.product, sku)
-  if (display.kind === 'unlimited' || display.kind === 'hidden') return 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
-  if (display.kind === 'out') return 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950/30 dark:text-rose-300'
-  if (display.kind === 'low_stock' || (display.kind === 'range' && display.max <= 5)) return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300'
-  return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
-}
-
-const skuStockDotClass = (sku: any) => {
-  const display = resolveSkuStockDisplay(props.product, sku)
-  if (display.kind === 'unlimited' || display.kind === 'hidden') return 'bg-slate-400 dark:bg-slate-500'
-  if (display.kind === 'out') return 'bg-rose-500 dark:bg-rose-400'
-  if (display.kind === 'low_stock' || (display.kind === 'range' && display.max <= 5)) return 'bg-amber-500 dark:bg-amber-400'
-  return 'bg-emerald-500 dark:bg-emerald-400'
-}
-
-const skuDisplayText = (sku: any) => buildSkuDisplayText({
-  skuCode: sku?.sku_code,
-  specValues: sku?.spec_values,
-  fallback: t('productDetail.skuFallback'),
-  locale: appStore.locale,
-})
 
 const effectiveLimit = computed(() => {
   const sku = selectedSku.value

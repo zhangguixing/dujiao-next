@@ -1,15 +1,15 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
-      <div class="mb-6 flex items-center justify-between">
+  <div class="storefront-page min-h-screen">
+    <div class="storefront-container">
+      <header class="storefront-page-heading flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 class="text-3xl font-black text-foreground mb-2">{{ t('payment.title') }}</h1>
-          <p class="text-muted-foreground text-sm">{{ t('payment.subtitle') }}</p>
+          <h1 class="storefront-page-title">{{ t('payment.title') }}</h1>
+          <p class="storefront-page-subtitle">{{ t('payment.subtitle') }}</p>
         </div>
         <router-link :to="backLink"
           class="text-muted-foreground hover:text-foreground transition-colors text-sm">{{
             t('payment.backToOrders') }}</router-link>
-      </div>
+      </header>
 
       <CheckoutSteps class="mb-8" current-step="payment" />
 

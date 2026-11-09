@@ -7,8 +7,8 @@
     leave-from-class="translate-y-0 opacity-100"
     leave-to-class="translate-y-full opacity-0">
     <div v-if="visible"
-      class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t shadow-2xl theme-safe-bottom">
-      <div class="flex items-center gap-3 px-4 py-3">
+      class="storefront-purchase-bar lg:hidden fixed bottom-[calc(var(--storefront-tabbar-height)+var(--storefront-bottom-inset))] left-0 right-0 z-40 bg-card border-t">
+      <div class="flex items-center gap-2 px-3 py-2">
         <!-- Price -->
         <div class="flex-1 min-w-0">
           <span v-if="showMemberPrice" class="theme-price-sm text-amber-600 dark:text-amber-300 truncate block">
@@ -28,14 +28,14 @@
           </span>
         </div>
         <!-- Actions -->
-        <Button v-if="requiresLogin" size="lg" class="rounded-xl font-bold" @click="$emit('goLogin')">
+        <Button v-if="requiresLogin" size="lg" class="min-h-11 rounded-xl px-3 font-semibold" @click="$emit('goLogin')">
           {{ t('productDetail.loginToBuy') }}
         </Button>
         <template v-else>
-          <Button variant="secondary" size="lg" class="rounded-xl font-bold" :disabled="!canPurchase" @click="$emit('addToCart')">
+          <Button variant="secondary" size="lg" class="min-h-11 rounded-xl px-3 font-semibold" :disabled="!canPurchase" @click="$emit('addToCart')">
             {{ t('productDetail.addToCart') }}
           </Button>
-          <Button size="lg" class="rounded-xl font-bold" :disabled="!canPurchase" @click="$emit('buyNow')">
+          <Button size="lg" class="min-h-11 rounded-xl px-3 font-semibold" :disabled="!canPurchase" @click="$emit('buyNow')">
             {{ t('productDetail.buyNow') }}
           </Button>
         </template>

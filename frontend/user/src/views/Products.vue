@@ -1,33 +1,47 @@
 <template>
-  <div class="products-page min-h-screen bg-background text-foreground pt-20 pb-16">
-    <div class="container mx-auto px-4">
+  <div class="storefront-page min-h-screen">
+    <div class="storefront-container">
       <!-- Page Header -->
-      <div class="mb-12 mt-12 text-center">
-        <h1 class="text-4xl md:text-5xl font-black mb-4 tracking-tight text-foreground">{{ t('nav.products') }}</h1>
-        <p class="text-muted-foreground max-w-2xl mx-auto text-lg border-b pb-8">
+      <header class="storefront-page-heading">
+        <h1 class="storefront-page-title">{{ seoCategoryName || t('nav.products') }}</h1>
+        <p class="storefront-page-subtitle">
           {{ t('products.subtitle') }}
         </p>
-      </div>
+      </header>
 
-      <div class="flex flex-col lg:flex-row gap-8">
+      <div class="flex flex-col gap-4 lg:flex-row lg:gap-7">
         <CategorySidebar
           :categories="categoryGroups"
           :selected-category="selectedCategory"
           :expanded-parent-ids="expandedParentIds"
           :show-drawer="showFilterDrawer"
-          :show-search="true"
-          :search-query="searchQuery"
           @select-category="selectCategory"
           @toggle-parent="toggleParentCategory"
           @update:show-drawer="showFilterDrawer = $event"
-          @update:search-query="searchQuery = $event"
-          @clear-search="clearSearch"
         />
 
         <!-- Main Content - Products Grid -->
-        <main class="flex-1">
+        <section class="min-w-0 flex-1" :aria-label="t('nav.products')" :aria-busy="loading">
+          <div class="mb-4 flex flex-wrap items-center gap-3">
+            <div class="relative min-w-0 flex-1 basis-52">
+              <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input
+                v-model="searchQuery"
+                type="search"
+                class="h-11 rounded-xl bg-card pl-10"
+                :aria-label="t('products.searchLabel')"
+                :placeholder="t('products.searchPlaceholder')"
+              />
+            </div>
+            <Button v-if="searchQuery || selectedCategory" type="button" variant="outline" class="h-11" @click="clearSearch(); selectCategory(null)">
+              {{ t('products.clearFilters') }}
+            </Button>
+          </div>
+          <p class="mb-3 min-h-5 text-sm text-ink-secondary tabular-nums" aria-live="polite">
+            {{ loading ? t('common.loading') : loadError ? '' : t('products.resultsCount', totalProducts) }}
+          </p>
           <!-- Loading Skeleton -->
-          <div v-if="loading" class="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div v-if="loading" class="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 xl:grid-cols-4">
             <div v-for="i in 6" :key="i"
               class="rounded-2xl border bg-card overflow-hidden flex flex-col">
               <div class="h-36 md:h-56 theme-skeleton"></div>
@@ -48,9 +62,15 @@
             </div>
           </div>
 
+          <EmptyState v-else-if="loadError" size="lg" icon="alert" :title="t('common.api.requestFailed')">
+            <template #action>
+              <Button variant="secondary" @click="loadProducts">{{ t('errorBoundary.retry') }}</Button>
+            </template>
+          </EmptyState>
+
           <!-- Products Grid -->
           <div v-else-if="products.length > 0">
-            <div class="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div class="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 xl:grid-cols-4">
               <ProductCard
                 v-for="(product, idx) in products"
                 :key="product.id"
@@ -85,7 +105,7 @@
               </Button>
             </template>
           </EmptyState>
-        </main>
+        </section>
       </div>
     </div>
 
@@ -102,6 +122,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { Search } from 'lucide-vue-next'
 import { useProductList } from '../composables/useProductList'
 import { usePageSeo } from '../composables/usePageSeo'
 import { useLocalized } from '../composables/useProduct'
@@ -111,17 +132,20 @@ import CategorySidebar from '../components/CategorySidebar.vue'
 import PaginationNav from '../components/PaginationNav.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const router = useRouter()
 const { t } = useI18n()
 
 const {
   loading,
+  loadError,
   products,
   selectedCategory,
   searchQuery,
   currentPage,
   totalPages,
+  totalProducts,
   showFilterDrawer,
   expandedParentIds,
   categoryGroups,
@@ -129,6 +153,7 @@ const {
   selectCategory,
   toggleParentCategory,
   changePage,
+  loadProducts,
   clearSearch,
   initialize,
   cleanup,

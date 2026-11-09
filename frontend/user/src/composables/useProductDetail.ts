@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useHead } from '@unhead/vue'
@@ -10,8 +10,8 @@ import { useBuyNowStore } from '../stores/buyNow'
 import { useUserAuthStore } from '../stores/userAuth'
 import { useUserProfileStore } from '../stores/userProfile'
 import { debounceAsync } from '../utils/debounce'
-import { buildSkuDisplayText, normalizeSkuId } from '../utils/sku'
-import { resolveSkuAvailableStock, resolveSkuStockDisplay, type PublicStockDisplay } from '../utils/publicStock'
+import { normalizeSkuId } from '../utils/sku'
+import { resolveSkuAvailableStock } from '../utils/publicStock'
 import { useLocalized, useProductLabels } from './useProduct'
 import { toast } from './useToast'
 
@@ -21,9 +21,8 @@ import { toast } from './useToast'
  * 仅各自负责 markup，保证功能严格一致。
  *
  * 视图专属的移动端购买条（IntersectionObserver + DOM ref）仍留在各视图中，
- * 通过 options.onLoaded 在商品加载完成后回调以初始化。
  */
-export function useProductDetail(options: { onLoaded?: () => void } = {}) {
+export function useProductDetail() {
   const route = useRoute()
   const router = useRouter()
   const { t } = useI18n()
@@ -236,41 +235,6 @@ export function useProductDetail(options: { onLoaded?: () => void } = {}) {
     return available > 0
   }
 
-  const formatSkuStockDisplay = (display: PublicStockDisplay) => {
-    switch (display.kind) {
-      case 'unlimited':
-        return t('productDetail.skuStockUnlimited')
-      case 'out':
-        return t('productDetail.skuStockOut')
-      case 'remaining':
-        return t('productDetail.skuStockRemaining', { count: display.count })
-      case 'low_stock':
-        return t('productDetail.skuStockLow')
-      case 'hidden':
-        return t('productDetail.skuStockHidden')
-      case 'range':
-        return t('productDetail.skuStockRange', { min: display.min, max: display.max })
-      case 'range_plus':
-        return t('productDetail.skuStockRangePlus', { min: display.min })
-      case 'in_stock':
-      default:
-        return t('productDetail.skuStockInStock')
-    }
-  }
-
-  const skuStockText = (sku: any) => {
-    const display = resolveSkuStockDisplay(product.value, sku)
-    return formatSkuStockDisplay(display)
-  }
-
-  const skuStockBadgeClass = (sku: any) => {
-    const display = resolveSkuStockDisplay(product.value, sku)
-    if (display.kind === 'unlimited' || display.kind === 'hidden') return 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
-    if (display.kind === 'out') return 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950/30 dark:text-rose-300'
-    if (display.kind === 'low_stock' || (display.kind === 'range' && display.max <= 5)) return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300'
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
-  }
-
   const quantityEffectiveLimit = computed(() => {
     const sku = selectedSku.value
     const available = skuAvailableStock(sku)
@@ -367,15 +331,6 @@ export function useProductDetail(options: { onLoaded?: () => void } = {}) {
     }
     return imageArray.map(img => getImageUrl(img))
   })
-
-  const skuDisplayText = (sku: any) => {
-    return buildSkuDisplayText({
-      skuCode: sku?.sku_code,
-      specValues: sku?.spec_values,
-      fallback: t('productDetail.skuFallback'),
-      locale: appStore.locale,
-    })
-  }
 
   const syncSelectedSku = () => {
     const rows = activeSkus.value
@@ -561,8 +516,6 @@ export function useProductDetail(options: { onLoaded?: () => void } = {}) {
         currentImage.value = images.value[0] || ''
       }
       syncSelectedSku()
-      await nextTick()
-      options.onLoaded?.()
     } catch (error) {
       console.error('Failed to load product:', error)
       product.value = null
@@ -700,7 +653,6 @@ export function useProductDetail(options: { onLoaded?: () => void } = {}) {
     hasSkuPromotionPrice, getSkuPromotionPriceAmount, getSkuPromotionSaveAmount,
     hasPromotionRules, getPromotionRules, hasWholesalePrices, getWholesalePrices,
     formatPromotionRule, formatWholesaleTier, formatRelatedPostDate,
-    normalizeSkuId,
     // 状态
     loading, product, relatedPosts, currentImage, selectedSkuId, quantity, purchaseWarning,
     activeSkus, selectedSku,
@@ -711,10 +663,10 @@ export function useProductDetail(options: { onLoaded?: () => void } = {}) {
     selectedSkuPromotionPrice, selectedSkuPromotionFinalIsMember, selectedSkuPromotionFinalPrice,
     showSelectedSkuMemberBadge,
     // SKU / 库存 / 数量
-    isSkuPurchasable, skuDisplayText, skuStockText, skuStockBadgeClass,
+    isSkuPurchasable,
     quantityEffectiveLimit, quantityEffectiveMin, handleQuantityInput,
     // 购买能力
-    purchaseType, requiresLogin, requiresSKUSelection, canPurchase, cannotPurchaseReason,
+    purchaseType, requiresLogin, canPurchase, cannotPurchaseReason,
     categoryName, images,
     backToListTo,
     // 动作

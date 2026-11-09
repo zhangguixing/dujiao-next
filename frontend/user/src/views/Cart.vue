@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
-      <div class="mb-8">
-        <h1 class="mb-2 text-3xl font-black text-foreground">{{ t('cart.title') }}</h1>
-        <p class="text-sm text-muted-foreground">{{ t('cart.subtitle') }}</p>
-      </div>
+  <div class="storefront-page min-h-screen">
+    <div class="storefront-container">
+      <header class="storefront-page-heading">
+        <h1 class="storefront-page-title">{{ t('cart.title') }}</h1>
+        <p class="storefront-page-subtitle">{{ t('cart.subtitle') }}</p>
+      </header>
 
       <CheckoutSteps class="mb-8" current-step="cart" />
 
@@ -17,12 +17,12 @@
         action-to="/products"
       />
 
-      <div v-else class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div class="space-y-4 lg:col-span-2">
+      <div v-else class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,23rem)] lg:gap-7">
+        <div class="min-w-0 space-y-4">
           <article
             v-for="item in cartItems"
             :key="cartItemKey(item)"
-            class="rounded-2xl border bg-card text-card-foreground p-4 md:p-5"
+            class="storefront-surface p-4 md:p-5"
           >
             <div class="flex gap-4 md:gap-5">
               <div
@@ -45,7 +45,7 @@
                       {{ getLocalizedText(item.title) }}
                     </router-link>
                     <p class="mt-1 text-sm text-muted-foreground">{{ t('cart.priceLabel') }}：{{ formatPrice(item.priceAmount, totalCurrency) }}</p>
-                    <p v-if="itemSkuDisplay(item)" class="mt-1 text-xs text-muted-foreground truncate">{{ t('cart.skuLabel') }}：{{ itemSkuDisplay(item) }}</p>
+                    <p v-if="itemSkuDisplay(item)" class="mt-1 text-xs text-ink-secondary [overflow-wrap:anywhere]">{{ t('cart.skuLabel') }}：{{ itemSkuDisplay(item) }}</p>
                     <p v-if="itemStockHint(item)" class="mt-1 text-xs text-muted-foreground">{{ itemStockHint(item) }}</p>
                     <div class="mt-2 md:mt-3 flex flex-wrap gap-2">
                       <Badge
@@ -120,7 +120,7 @@
           </article>
         </div>
 
-        <div class="h-fit rounded-2xl border bg-card text-card-foreground p-6 lg:sticky lg:top-24">
+        <div class="storefront-surface min-w-0 p-5 lg:sticky lg:top-24 lg:p-6">
           <h2 class="mb-4 text-lg font-bold text-foreground">{{ t('cart.summaryTitle') }}</h2>
           <div class="space-y-3 text-sm text-muted-foreground">
             <div class="flex items-center justify-between">

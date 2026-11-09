@@ -55,6 +55,7 @@ export function useBannerCarousel() {
 
   const startHeroAutoPlay = () => {
     stopHeroAutoPlay()
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     if (banners.value.length <= 1) return
     heroAutoPlayTimer = setInterval(() => {
       nextHeroBanner()

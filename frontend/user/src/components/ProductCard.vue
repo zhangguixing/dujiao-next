@@ -1,22 +1,18 @@
 <template>
   <Card
-    class="group relative overflow-hidden flex flex-col h-full rounded-2xl transition-all theme-slide-up"
+    class="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-xl transition-[border-color,box-shadow] theme-slide-up"
     :class="isSoldOut(product)
       ? 'cursor-default opacity-85 grayscale-[0.25] saturate-50 border-destructive/30'
-      : 'cursor-pointer hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg'"
+      : 'cursor-pointer hover:border-primary/40 hover:shadow-soft focus-within:border-primary'"
     :style="{ animationDelay: `${index * animationStep}ms` }"
     @click="$emit('click', product.slug)">
     <!-- Image Area -->
     <div class="aspect-[4/3] overflow-hidden bg-muted relative shrink-0">
-      <div
-        class="absolute inset-0 z-10 transition-colors duration-300"
-        :class="isSoldOut(product) ? 'bg-black/15' : 'bg-black/15 group-hover:bg-black/5'"
-      ></div>
       <img v-if="displayImageSrc && !imageErrored" :src="displayImageSrc"
         :alt="getLocalizedText(product.title)" loading="lazy" decoding="async"
         class="w-full h-full object-cover transform transition-transform duration-700 ease-out"
         :class="[
-          isSoldOut(product) ? 'grayscale brightness-75' : 'group-hover:scale-105',
+          isSoldOut(product) ? 'grayscale brightness-75' : 'motion-safe:[@media(hover:hover)]:group-hover:scale-105',
         ]"
         @error="handleImageError" />
       <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground" role="img"
@@ -45,12 +41,18 @@
     </div>
 
     <!-- Content Area -->
-    <div class="p-3 md:p-4 relative z-20 flex flex-col flex-1">
-      <div v-if="product.category?.name" class="text-xs text-muted-foreground uppercase tracking-wider mb-1 md:mb-2 truncate">
+    <div class="relative z-20 flex flex-1 flex-col p-2.5 sm:p-3 md:p-4">
+      <div v-if="product.category?.name" class="mb-1 truncate text-xs text-ink-secondary">
         {{ t('products.categoryLabel') }} · {{ getLocalizedText(product.category.name) }}
       </div>
-      <h3 class="text-sm md:text-lg font-bold text-foreground mb-1 md:mb-2 transition-colors line-clamp-1">
-        {{ getLocalizedText(product.title) }}
+      <h3 class="mb-2 text-sm font-semibold leading-snug text-foreground md:text-base">
+        <router-link
+          :to="`/products/${product.slug}`"
+          class="line-clamp-2 rounded-sm [overflow-wrap:anywhere] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          @click.stop
+        >
+          {{ getLocalizedText(product.title) }}
+        </router-link>
       </h3>
 
       <!-- Badges -->
@@ -94,19 +96,19 @@
         {{ getLocalizedText(product.description) }}
       </p>
 
-      <div class="flex items-center justify-between border-t pt-2 md:pt-4 mt-auto">
-        <div class="flex flex-col">
+      <div class="mt-auto flex items-center justify-between gap-2 border-t pt-2.5 md:pt-3">
+        <div class="flex min-w-0 flex-col">
           <span class="hidden md:block text-xs text-muted-foreground uppercase tracking-wider">{{ t('products.price') }}</span>
           <span
             v-if="hasPromotionPrice(product)"
-            class="theme-price-sm theme-price-promotion"
+            class="theme-price-sm theme-price-promotion text-sm [overflow-wrap:anywhere] md:text-lg"
             :aria-label="t('products.promotionPriceAria', { price: formatPrice(getPromotionPriceAmount(product), siteCurrency) })"
           >
             {{ formatPrice(getPromotionPriceAmount(product), siteCurrency) }}
           </span>
           <span
             v-else
-            class="theme-price-sm"
+            class="theme-price-sm text-sm [overflow-wrap:anywhere] md:text-lg"
             :aria-label="t('products.priceAria', { price: formatPrice(product.price_amount, siteCurrency) })"
           >
             {{ formatPrice(product.price_amount, siteCurrency) }}
@@ -132,13 +134,13 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex shrink-0 items-center gap-2">
           <!-- Quick buy cart button -->
           <Button
             type="button"
             variant="outline"
             size="icon"
-            class="w-8 h-8 md:w-9 md:h-9"
+            class="size-11 rounded-xl"
             :aria-label="t('products.quickBuyAria')"
             :disabled="isSoldOut(product)"
             @click.stop="$emit('quickBuy', product)"
@@ -153,8 +155,6 @@
               : 'text-muted-foreground group-hover:text-foreground'">
             <ArrowRight class="w-4 h-4 transition-transform" :class="isSoldOut(product) ? '' : 'group-hover:translate-x-1'" />
           </span>
-          <!-- Mobile: arrow only -->
-          <ChevronRight class="md:hidden w-4 h-4 text-muted-foreground" />
         </div>
       </div>
     </div>
@@ -164,7 +164,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed, ref, watch } from 'vue'
-import { ArrowRight, ChevronRight, Image as ImageIcon, Lock, Pencil, ShoppingCart, UserPlus, Zap } from 'lucide-vue-next'
+import { ArrowRight, Image as ImageIcon, Lock, Pencil, ShoppingCart, UserPlus, Zap } from 'lucide-vue-next'
 import { getFirstImageUrl, getImageUrl } from '../utils/image'
 import { useLocalized, useProductLabels } from '../composables/useProduct'
 import { Badge } from '@/components/ui/badge'
