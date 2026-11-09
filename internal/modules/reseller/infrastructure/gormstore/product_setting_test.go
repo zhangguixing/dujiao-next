@@ -34,10 +34,11 @@ func openResellerProductSettingRepoTestDB(t *testing.T) *gorm.DB {
 		&categorydomain.Category{},
 		&productdomain.Product{},
 		&productdomain.ProductSKU{},
-		&resellerdomain.Profile{},
-		&resellerdomain.ProductSetting{},
 	); err != nil {
 		t.Fatalf("migrate failed: %v", err)
+	}
+	if err := Migrate(db); err != nil {
+		t.Fatalf("migrate reseller schema failed: %v", err)
 	}
 	return db
 }

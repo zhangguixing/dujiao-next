@@ -7,7 +7,7 @@ application: the Go backend, the customer storefront, and the admin panel.
 
 | Layer | Stack |
 | --- | --- |
-| Backend | Go 1.26 · Gin · GORM · SQLite / PostgreSQL |
+| Backend | Go 1.26 · Gin · GORM · SQLite / PostgreSQL / MySQL 8.4 |
 | Auth | JWT (separate admin / user realms) · Casbin RBAC · TOTP 2FA |
 | Async | asynq on Redis (optional — the server runs without it) |
 | Config | Viper (`config.yml`) |
@@ -45,6 +45,34 @@ application: the Go backend, the customer storefront, and the admin panel.
 ```
 
 Runtime directories created on first start: `db/` (SQLite), `uploads/`, `logs/`.
+
+### MySQL
+
+For a new MySQL 8.4 deployment, create an empty database with a case-sensitive
+collation so identifiers and credentials are compared exactly.
+
+```sql
+CREATE DATABASE dujiao_next CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+```
+
+Set the following in `config.yml` and replace the DSN with the connection
+details for a user with read, write, and schema creation and alteration
+permissions on that database.
+
+```yaml
+database:
+  driver: mysql
+  dsn: "dujiao:your-password@tcp(mysql:3306)/dujiao_next"
+  pool:
+    max_open_conns: 10
+    max_idle_conns: 5
+```
+
+The server initializes the schema on first startup and uses InnoDB and UTC
+for its MySQL sessions. For the MySQL integration tests, point
+`TEST_MYSQL_DSN` at a dedicated empty database with the same collation and run
+`go test -tags integration ./internal/persistence/integrationtest -run '^TestMySQL$'`.
+The test leaves its fixtures in the test database.
 
 ## Architecture
 

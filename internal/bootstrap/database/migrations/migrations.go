@@ -170,7 +170,7 @@ func ensureManualStockRemainingMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", manualStockRemainingMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": manualStockRemainingMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -226,7 +226,7 @@ func ensurePaymentFeePolicyMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", paymentFeePolicyMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": paymentFeePolicyMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -266,7 +266,7 @@ func ensureOrderRefundPaymentFeeMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", orderRefundPaymentFeeMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": orderRefundPaymentFeeMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -396,7 +396,7 @@ func ensureOrderItemOriginalPriceMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", orderItemOriginalPriceMigrationKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": orderItemOriginalPriceMigrationKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -530,7 +530,7 @@ func ensureProductSKUMigration() error {
 
 	// 检查迁移标记，已完成则跳过
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", skuMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": skuMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -771,7 +771,7 @@ func ensurePaymentProviderBepusdtRenameMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", paymentProviderBepusdtRenameMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": paymentProviderBepusdtRenameMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -807,7 +807,7 @@ func ensurePaymentChannelBepusdtConfigMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", paymentChannelBepusdtConfigMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": paymentChannelBepusdtConfigMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
@@ -885,7 +885,7 @@ func ensureCategoryParentMigration() error {
 	}
 
 	var marker settingsstore.SettingRecord
-	if err := gormdb.DB.First(&marker, "key = ?", categoryParentMigrationSettingKey).Error; err != nil {
+	if err := gormdb.DB.First(&marker, map[string]interface{}{"key": categoryParentMigrationSettingKey}).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}

@@ -11,6 +11,7 @@ import (
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
 	userauthapp "github.com/dujiao-next/internal/modules/identity/userauth/application"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -65,6 +66,10 @@ func isRetryableTransactionError(err error) bool {
 	var postgresErr *pgconn.PgError
 	if errors.As(err, &postgresErr) {
 		return postgresErr.Code == "40001" || postgresErr.Code == "40P01"
+	}
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return mysqlErr.Number == 1213 || mysqlErr.Number == 1205
 	}
 	message := strings.ToLower(err.Error())
 	return strings.Contains(message, "database is locked") ||

@@ -35,7 +35,7 @@ type refundAggregateRow struct {
 // getRefundAdjustments 按退款发生日计算退款金额与同比例冲回的成本。
 // 父订单本身没有订单项，因此其成本基数包含自身及直接子订单的订单项成本。
 func (r *Store) getRefundAdjustments(startAt, endAt time.Time) ([]refundAdjustmentRow, error) {
-	refundDayExpr := dateGroupExpr(r.db, "order_refund_records.created_at", startAt.Location(), startAt)
+	refundDayExpr := dateGroupExpr(r.db, "order_refund_records.created_at", startAt, endAt)
 	refundRows := make([]refundAggregateRow, 0)
 	timeWhere, timeArgs := timeRangeQuery(r.db, "order_refund_records.created_at", startAt, endAt)
 	if err := r.db.Model(&orderdomain.OrderRefundRecord{}).
@@ -167,7 +167,7 @@ func (r *Store) GetProfitOverview(startAt, endAt time.Time) (dashboard.ProfitOve
 
 // GetProfitTrends 获取利润趋势
 func (r *Store) GetProfitTrends(startAt, endAt time.Time) ([]dashboard.ProfitTrendRow, error) {
-	orderDayExpr := dateGroupExpr(r.db, "orders.created_at", startAt.Location(), startAt)
+	orderDayExpr := dateGroupExpr(r.db, "orders.created_at", startAt, endAt)
 
 	rows := make([]dashboard.ProfitTrendRow, 0)
 	timeWhere, timeArgs := timeRangeQuery(r.db, "orders.created_at", startAt, endAt)
@@ -194,7 +194,7 @@ func (r *Store) GetProfitTrends(startAt, endAt time.Time) ([]dashboard.ProfitTre
 		PaymentFee float64 `gorm:"column:payment_fee"`
 	}
 	paymentFeeRows := make([]paymentFeeTrendRow, 0)
-	paymentFeeDayExpr := dateGroupExpr(r.db, "payments.created_at", startAt.Location(), startAt)
+	paymentFeeDayExpr := dateGroupExpr(r.db, "payments.created_at", startAt, endAt)
 	paymentTimeWhere, paymentTimeArgs := timeRangeQuery(r.db, "created_at", startAt, endAt)
 	paymentArgs := append(paymentTimeArgs, constants.PaymentStatusSuccess, constants.PaymentProviderWallet, constants.PaymentFeePolicyMerchantAbsorbed)
 	if err := r.db.Model(&paymentdomain.Payment{}).

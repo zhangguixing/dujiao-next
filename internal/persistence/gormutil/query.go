@@ -30,6 +30,9 @@ func JSONTextExprByDialect(dialect, column, key string) string {
 	switch strings.ToLower(strings.TrimSpace(dialect)) {
 	case "postgres", "postgresql":
 		return fmt.Sprintf("(%s::jsonb ->> '%s')", column, key)
+	case "mysql":
+		extracted := fmt.Sprintf("JSON_EXTRACT(%s, '$.\"%s\"')", column, key)
+		return fmt.Sprintf("(CASE WHEN JSON_TYPE(%s) <> 'NULL' THEN JSON_UNQUOTE(%s) END)", extracted, extracted)
 	default:
 		return fmt.Sprintf("json_extract(%s, '$.\"%s\"')", column, key)
 	}
@@ -43,6 +46,8 @@ func JSONArrayLengthExprByDialect(dialect, column string) string {
 	switch strings.ToLower(strings.TrimSpace(dialect)) {
 	case "postgres", "postgresql":
 		return fmt.Sprintf("jsonb_array_length(COALESCE(%s::jsonb, '[]'::jsonb))", column)
+	case "mysql":
+		return fmt.Sprintf("(CASE WHEN JSON_TYPE(%s) = 'ARRAY' THEN JSON_LENGTH(%s) ELSE 0 END)", column, column)
 	default:
 		return fmt.Sprintf("json_array_length(COALESCE(%s, '[]'))", column)
 	}
@@ -57,8 +62,15 @@ func BuildLocalizedLikeConditionByDialect(dialect string, plainColumns, jsonColu
 	parts := make([]string, 0, len(plainColumns)+len(jsonColumns)*len(localizedJSONSearchKeys))
 	argCount := 0
 	operator := "LIKE"
-	if normalized := strings.ToLower(strings.TrimSpace(dialect)); normalized == "postgres" || normalized == "postgresql" {
+	normalized := strings.ToLower(strings.TrimSpace(dialect))
+	if normalized == "postgres" || normalized == "postgresql" {
 		operator = "ILIKE"
+	}
+	likeCondition := func(expr string) string {
+		if normalized == "mysql" {
+			return expr + " COLLATE utf8mb4_0900_as_ci LIKE ?"
+		}
+		return fmt.Sprintf("%s %s ?", expr, operator)
 	}
 
 	for _, column := range plainColumns {
@@ -66,7 +78,7 @@ func BuildLocalizedLikeConditionByDialect(dialect string, plainColumns, jsonColu
 		if trimmed == "" {
 			continue
 		}
-		parts = append(parts, fmt.Sprintf("%s %s ?", trimmed, operator))
+		parts = append(parts, likeCondition(trimmed))
 		argCount++
 	}
 
@@ -76,7 +88,7 @@ func BuildLocalizedLikeConditionByDialect(dialect string, plainColumns, jsonColu
 			continue
 		}
 		for _, key := range localizedJSONSearchKeys {
-			parts = append(parts, fmt.Sprintf("%s %s ?", JSONTextExprByDialect(dialect, trimmed, key), operator))
+			parts = append(parts, likeCondition(JSONTextExprByDialect(dialect, trimmed, key)))
 			argCount++
 		}
 	}

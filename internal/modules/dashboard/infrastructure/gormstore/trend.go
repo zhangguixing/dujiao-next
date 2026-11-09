@@ -12,7 +12,7 @@ import (
 
 // GetOrderTrends 获取订单趋势
 func (r *Store) GetOrderTrends(startAt, endAt time.Time) ([]dashboard.OrderTrendRow, error) {
-	dayExpr := dateGroupExpr(r.db, "created_at", startAt.Location(), startAt)
+	dayExpr := dateGroupExpr(r.db, "created_at", startAt, endAt)
 	paidIn := quotedStatusList(paidOrderStatuses())
 
 	rows := make([]dashboard.OrderTrendRow, 0)
@@ -36,7 +36,7 @@ func (r *Store) GetOrderTrends(startAt, endAt time.Time) ([]dashboard.OrderTrend
 
 // GetPaymentTrends 获取支付趋势
 func (r *Store) GetPaymentTrends(startAt, endAt time.Time) ([]dashboard.PaymentTrendRow, error) {
-	dayExpr := dateGroupExpr(r.db, "created_at", startAt.Location(), startAt)
+	dayExpr := dateGroupExpr(r.db, "created_at", startAt, endAt)
 
 	rows := make([]dashboard.PaymentTrendRow, 0)
 	selectSQL := fmt.Sprintf(`

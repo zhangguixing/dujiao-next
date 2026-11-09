@@ -28,7 +28,10 @@ log:
 database:
   # driver: postgres
   # dsn: host=postgres user=dujiao password=dujiao_pass dbname=dujiao_next port=5432 sslmode=disable TimeZone=Asia/Shanghai
-  driver: sqlite  # sqlite / postgres
+  # MySQL 8.4 requires a database created with CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin.
+  # driver: mysql
+  # dsn: "dujiao:your-password@tcp(mysql:3306)/dujiao_next"
+  driver: sqlite  # sqlite / postgres / mysql
   dsn: ./db/dujiao.db
   pool:
     max_open_conns: 1

@@ -32,7 +32,7 @@ func New(db *gorm.DB) *Store {
 // GetByKey reads a setting value.
 func (store *Store) GetByKey(key string) (jsonmap.JSON, bool, error) {
 	var record SettingRecord
-	if err := store.db.Where("key = ?", key).First(&record).Error; err != nil {
+	if err := store.db.First(&record, map[string]interface{}{"key": key}).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, false, nil
 		}
@@ -44,7 +44,7 @@ func (store *Store) GetByKey(key string) (jsonmap.JSON, bool, error) {
 // Upsert creates or updates a setting value.
 func (store *Store) Upsert(key string, value jsonmap.JSON) (jsonmap.JSON, error) {
 	var record SettingRecord
-	err := store.db.Where("key = ?", key).First(&record).Error
+	err := store.db.First(&record, map[string]interface{}{"key": key}).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		record = SettingRecord{Key: key, ValueJSON: value}
 		if err := store.db.Create(&record).Error; err != nil {
