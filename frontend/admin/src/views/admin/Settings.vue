@@ -44,9 +44,6 @@ type SiteScriptItem = {
   code: string
 }
 
-const storefrontOptions = ['classic', 'vault', 'mint', 'paper', 'mono'] as const
-type StorefrontTemplate = (typeof storefrontOptions)[number]
-
 const siteScriptsMaxCount = 20
 const footerLinksMaxCount = 20
 
@@ -226,7 +223,6 @@ const form = reactive({
   },
   scripts: [] as SiteScriptItem[],
   footer_links: [] as FooterLinkItem[],
-  storefront_template: 'classic' as StorefrontTemplate,
   template_mode: 'card' as 'card' | 'list',
 })
 
@@ -463,9 +459,6 @@ const fetchSettings = async () => {
 
       const rawTemplateMode = String(data.template_mode || 'card').trim()
       form.template_mode = rawTemplateMode === 'list' ? 'list' : 'card'
-
-      const rawStorefrontTemplate = String(data.storefront_template || 'classic').trim()
-      form.storefront_template = storefrontOptions.includes(rawStorefrontTemplate as StorefrontTemplate) ? rawStorefrontTemplate as StorefrontTemplate : 'classic'
     }
 
     if (orderRes.data && orderRes.data.data) {
@@ -626,7 +619,6 @@ const saveSiteSettings = async () => {
       legal: form.legal,
       scripts: form.scripts,
       footer_links: form.footer_links,
-      storefront_template: form.storefront_template,
       template_mode: form.template_mode,
     },
   }
@@ -1160,38 +1152,6 @@ onMounted(() => {
 
       <!-- Template Mode Tab -->
       <TabsContent value="template" :forceMount="true" v-show="currentTab === 'template'" class="space-y-6 mt-0">
-      <!-- Storefront theme: classic / vault -->
-      <div class="rounded-xl border border-border bg-card">
-        <div class="flex flex-col gap-3 border-b border-border bg-muted/40 px-6 py-4">
-          <div>
-            <h2 class="text-lg font-semibold">{{ t('admin.settings.template.storefrontTitle') }}</h2>
-            <p class="mt-1 text-xs text-muted-foreground">{{ t('admin.settings.template.storefrontSubtitle') }}</p>
-          </div>
-        </div>
-        <div class="px-6 py-6">
-          <RadioGroup v-model="form.storefront_template" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Label
-              v-for="option in storefrontOptions"
-              :key="option"
-              class="relative flex cursor-pointer flex-col gap-4 rounded-xl border-2 p-4 transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-              :class="form.storefront_template === option ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'"
-            >
-              <RadioGroupItem :value="option" class="sr-only" />
-              <div class="theme-swatch" :class="`theme-swatch--${option}`" aria-hidden="true">
-                <div class="theme-swatch-nav"><i></i><i></i><i></i></div>
-                <div class="theme-swatch-hero"><span></span><b></b></div>
-                <div class="theme-swatch-grid"><i></i><i></i><i></i></div>
-              </div>
-              <div>
-                <div class="font-semibold">{{ t(`admin.settings.template.${option}Mode`) }}</div>
-                <p class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ t(`admin.settings.template.${option}ModeDesc`) }}</p>
-              </div>
-              <span v-if="form.storefront_template === option" class="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground" aria-hidden="true">✓</span>
-            </Label>
-          </RadioGroup>
-        </div>
-      </div>
-
       <!-- Product layout: card / list -->
       <div class="rounded-xl border border-border bg-card">
         <div class="flex flex-col gap-3 border-b border-border bg-muted/40 px-6 py-4">
@@ -1566,21 +1526,3 @@ onMounted(() => {
     </Tabs>
   </div>
 </template>
-
-<style scoped>
-.theme-swatch { --preview-bg: #eff3fa; --preview-ink: #275da4; --preview-card: #fcfdff; width: 100%; height: 126px; padding: 12px; background: var(--preview-bg); border: 1px solid color-mix(in srgb, var(--preview-ink) 20%, transparent); border-radius: 8px; overflow: hidden; }
-.theme-swatch--vault { --preview-bg: #1b1b2c; --preview-ink: #a09aea; --preview-card: #302f48; }
-.theme-swatch--mint { --preview-bg: #e5f0e8; --preview-ink: #246b4c; --preview-card: #f8fcfa; border-radius: 16px; }
-.theme-swatch--paper { --preview-bg: #f4f0e8; --preview-ink: #91442f; --preview-card: #e6ddd0; border-radius: 1px; }
-.theme-swatch--mono { --preview-bg: #151915; --preview-ink: #c5e779; --preview-card: #2a3426; border-radius: 3px; }
-.theme-swatch-nav { display: flex; gap: 4px; padding-bottom: 9px; border-bottom: 1px solid color-mix(in srgb, var(--preview-ink) 25%, transparent); }
-.theme-swatch-nav i { width: 14px; height: 3px; background: var(--preview-ink); opacity: .5; }
-.theme-swatch-nav i:first-child { width: 28px; margin-right: auto; opacity: 1; }
-.theme-swatch-hero { display: flex; justify-content: space-between; align-items: center; height: 48px; }
-.theme-swatch-hero span { width: 48%; height: 17px; border-block: 5px solid var(--preview-ink); }
-.theme-swatch-hero b { width: 32px; height: 32px; background: var(--preview-ink); opacity: .8; transform: rotate(-12deg); }
-.theme-swatch--mint .theme-swatch-hero b { border-radius: 9px; }
-.theme-swatch--paper .theme-swatch-hero b { width: 28%; height: 24px; transform: none; background: transparent; border-block: 1px solid var(--preview-ink); }
-.theme-swatch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.theme-swatch-grid i { height: 27px; background: var(--preview-card); border-top: 2px solid var(--preview-ink); }
-</style>

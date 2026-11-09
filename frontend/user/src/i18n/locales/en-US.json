@@ -52,30 +52,6 @@
     "notice": "Notice",
     "about": "About"
   },
-  "vault": {
-    "hero": {
-      "badge": "Instant delivery · Digital goods",
-      "titleLead": "Top-ups, keys, memberships — ",
-      "titleHl": "delivered in seconds.",
-      "lede": "Game cards, streaming memberships, software licenses, gift cards and AI tools — auto-delivered the moment you pay.",
-      "searchButton": "Search",
-      "hot": "Popular:",
-      "trustFast": "Lightning-fast auto delivery",
-      "trustSecure": "Encrypted checkout · vouchers stay private",
-      "trustRefund": "Issues handled promptly"
-    },
-    "categoriesTitle": "Browse by category",
-    "allCategories": "All categories",
-    "footer": {
-      "shop": "Shop",
-      "support": "Support",
-      "legal": "Legal",
-      "tagline": "Digital goods, auto-delivered. Keys, licenses and top-ups delivered on payment.",
-      "faq": "FAQ",
-      "payAlipay": "Alipay",
-      "payWechat": "WeChat"
-    }
-  },
   "breadcrumb": {
     "label": "Breadcrumb",
     "back": "Back to {name}"
@@ -1740,32 +1716,6 @@
     "authInvalid": "Credentials mismatch, please try again",
     "authSubmit": "Save and search",
     "authClear": "Clear saved info"
-  },
-  "storefrontThemes": {
-    "mint": {
-      "eyebrow": "A fresh take on digital goods",
-      "title": "Your digital life,",
-      "highlight": "a little fresher.",
-      "description": "Find digital goods that fit your day, from useful tools to everyday essentials.",
-      "objectLabel": "Digital picks",
-      "collection": "The collection"
-    },
-    "paper": {
-      "eyebrow": "A considered digital store",
-      "title": "Thoughtfully picked.",
-      "highlight": "Made for your day.",
-      "description": "Bring the tools and services you need into your everyday. Browse at your own pace.",
-      "indexLabel": "Store index",
-      "collection": "Selected goods"
-    },
-    "mono": {
-      "eyebrow": "For your next idea",
-      "title": "Digital essentials.",
-      "highlight": "Ready when you are.",
-      "description": "Explore digital goods and services for your work, creative projects and everyday life.",
-      "objectLabel": "Digital space",
-      "collection": "Explore the catalog"
-    }
   },
   "contactChannels": {
     "telegram": "Telegram",

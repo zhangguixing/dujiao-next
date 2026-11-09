@@ -546,15 +546,8 @@ const (
 	SiteCurrencyDefault = "CNY"
 )
 
-// 店面模板常量（站长全局选择的用户前台模板）
-const (
-	StorefrontTemplateClassic = "classic"
-	StorefrontTemplateVault   = "vault"
-	StorefrontTemplateMint    = "mint"
-	StorefrontTemplatePaper   = "paper"
-	StorefrontTemplateMono    = "mono"
-	StorefrontTemplateDefault = StorefrontTemplateClassic
-)
+// StorefrontTemplateDefault 是店面使用的经典主题。
+const StorefrontTemplateDefault = "classic"
 
 // 站点语言常量
 const (

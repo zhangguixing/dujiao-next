@@ -111,14 +111,6 @@ export function useRechargeOrderDetail() {
     return 'warning'
   }
 
-  // vault 模板：BadgeTone → vault pill 类名（classic 不使用）
-  const rechargeStatusPillClass = (status?: string) => {
-    const variant = rechargeStatusVariant(status)
-    if (variant === 'success') return 'pill-done'
-    if (variant === 'danger') return 'pill-sale'
-    return 'pill-low'
-  }
-
   const formatMoney = (amount?: string, currency?: string) => {
     if (amount === null || amount === undefined || amount === '') return '-'
     if (currency === null || currency === undefined || currency === '') return String(amount)
@@ -320,7 +312,6 @@ export function useRechargeOrderDetail() {
     customerFeeApplied,
     rechargeStatusText,
     rechargeStatusVariant,
-    rechargeStatusPillClass,
     formatMoney,
     formatDate,
     loadDetail,

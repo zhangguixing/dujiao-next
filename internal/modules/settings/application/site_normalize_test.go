@@ -745,16 +745,11 @@ func TestUpdateSiteSettingValidatesContactLinks(t *testing.T) {
 	}
 }
 
-// Exercise the settings persistence path: a newly selected theme must survive a reload.
-func TestStorefrontTemplateSelectionRoundTrip(t *testing.T) {
+func TestSiteSettingsSaveClassicStorefrontTheme(t *testing.T) {
 	for _, template := range []string{"classic", "vault", "mint", "paper", "mono", "circuit", "signal", "unknown", ""} {
 		t.Run(template, func(t *testing.T) {
 			repo := newMockSettingRepo()
 			svc := NewService(repo)
-			expected := template
-			if template == "unknown" || template == "" || template == "circuit" || template == "signal" {
-				expected = constants.StorefrontTemplateDefault
-			}
 			_, err := svc.Update(constants.SettingKeySiteConfig, map[string]interface{}{
 				constants.SettingFieldStorefrontTemplate: "  " + template + "  ",
 			})
@@ -765,8 +760,8 @@ func TestStorefrontTemplateSelectionRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatalf("reload theme: %v", err)
 			}
-			if saved[constants.SettingFieldStorefrontTemplate] != expected {
-				t.Fatalf("theme after reload = %v, want %s", saved[constants.SettingFieldStorefrontTemplate], expected)
+			if saved[constants.SettingFieldStorefrontTemplate] != constants.StorefrontTemplateDefault {
+				t.Fatalf("theme after reload = %v, want %s", saved[constants.SettingFieldStorefrontTemplate], constants.StorefrontTemplateDefault)
 			}
 		})
 	}
@@ -864,12 +859,8 @@ func TestGetConfigFallsBackFromRemovedStorefrontThemes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			expected := theme
-			if theme == "circuit" || theme == "signal" {
-				expected = constants.StorefrontTemplateDefault
-			}
-			if result[constants.SettingFieldStorefrontTemplate] != expected {
-				t.Fatalf("public theme = %v, want %s", result[constants.SettingFieldStorefrontTemplate], expected)
+			if result[constants.SettingFieldStorefrontTemplate] != constants.StorefrontTemplateDefault {
+				t.Fatalf("public theme = %v, want %s", result[constants.SettingFieldStorefrontTemplate], constants.StorefrontTemplateDefault)
 			}
 			if result["brand"].(map[string]interface{})["site_name"] != "Existing Shop" {
 				t.Fatal("unrelated site settings changed")

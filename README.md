@@ -157,10 +157,9 @@ placeholder, which the server rewrites on startup. Consequences for admin code:
 - `<router-link :to>` and `router.push()` must **not** — vue-router already carries the base,
   and prefixing again yields `/admin/admin/...`
 
-**Storefront templates.** The customer frontend ships more than one look, selected by the
-`storefront_template` site setting (`classic`, `vault`, `mint`, `paper`, `mono`). Template pages live in
-`src/templates/<name>/`; the custom themes reuse Vault commerce pages when no
-theme-specific page exists, then fall back to `src/views/`; see `src/templates/registry.ts`. Append `?template=vault` to preview one locally.
+**Storefront.** The customer frontend uses the classic theme, with pages in `frontend/user/src/views/`.
+The product layout can still be set to cards or a list through `template_mode`.
+
 
 **i18n.** Both frontends and all API responses are localized — Simplified Chinese, Traditional
 Chinese, and English. Do not hard-code user-facing strings on either side.

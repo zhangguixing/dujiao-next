@@ -52,30 +52,6 @@
     "notice": "公告",
     "about": "关于"
   },
-  "vault": {
-    "hero": {
-      "badge": "即时发货 · 数字商品",
-      "titleLead": "买卡密、充值、会员，",
-      "titleHl": "秒到账。",
-      "lede": "游戏点卡、流媒体会员、软件授权、礼品卡、AI 工具 —— 付款后自动发货，凭证立即送达。",
-      "searchButton": "搜索",
-      "hot": "热门：",
-      "trustFast": "极速自动发货",
-      "trustSecure": "加密结算 · 凭证仅你可见",
-      "trustRefund": "问题订单及时处理"
-    },
-    "categoriesTitle": "按分类逛",
-    "allCategories": "全部分类",
-    "footer": {
-      "shop": "商城",
-      "support": "支持",
-      "legal": "条款",
-      "tagline": "数字商品自动发货平台。卡密、授权、充值，付款即交付。",
-      "faq": "常见问题",
-      "payAlipay": "支付宝",
-      "payWechat": "微信"
-    }
-  },
   "breadcrumb": {
     "label": "面包屑导航",
     "back": "返回{name}"
@@ -1740,32 +1716,6 @@
     "label": "购买身份",
     "member": "会员购买",
     "guest": "游客可购"
-  },
-  "storefrontThemes": {
-    "mint": {
-      "eyebrow": "数字好物，轻松发现",
-      "title": "给数字生活，",
-      "highlight": "一点新鲜感。",
-      "description": "从实用工具到日常所需，找到适合你的数字商品。",
-      "objectLabel": "数字精选",
-      "collection": "好物陈列"
-    },
-    "paper": {
-      "eyebrow": "一间数字选物商店",
-      "title": "用心挑选，",
-      "highlight": "恰好所需。",
-      "description": "把需要的工具与服务，收进你的日常。慢慢浏览，认真选择。",
-      "indexLabel": "店内索引",
-      "collection": "本期选物"
-    },
-    "mono": {
-      "eyebrow": "为你的下一个想法",
-      "title": "数字装备，",
-      "highlight": "即刻就位。",
-      "description": "浏览数字商品与服务，为创作、工作和日常找到合适的工具。",
-      "objectLabel": "数字空间",
-      "collection": "探索商品"
-    }
   },
   "contactChannels": {
     "telegram": "Telegram",

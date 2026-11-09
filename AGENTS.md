@@ -53,7 +53,7 @@
 2. **admin 运行时路径**：admin 可挂在任意 `web.admin_path` 下，禁止用构建期常量拼站点前缀。
    - 原生 `<a href>`、`window.location` 跳转必须用 `src/utils/adminBase.ts` 的 `adminUrl()`。
    - `<router-link :to>`、`router.push()` **不要**加前缀（vue-router 已带 base，再加会变成 `/admin/admin/...`）。
-3. **user 店面模板**：模板页面在 `src/templates/<name>/`，缺省回落到 `src/views/`，见 `src/templates/registry.ts`。改页面时确认改的是对的那一份。
+3. **user 店面页面**：经典主题页面在 `frontend/user/src/views/`，商品布局由 `template_mode` 控制（卡片或列表）。
 4. 组件文件 `PascalCase.vue`，工具函数 `camelCase.ts`；admin UI 基于 shadcn-vue / reka-ui，优先用已有组件。
 5. 包管理器只用 **pnpm 10.34.3**（`corepack enable`）。不要用 `pnpm --dir X`（读不到子目录 `packageManager`，会选错版本），一律 `cd` 进目录执行。不要提交 npm / yarn 的 lockfile。
 

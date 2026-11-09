@@ -52,30 +52,6 @@
     "notice": "公告",
     "about": "關於"
   },
-  "vault": {
-    "hero": {
-      "badge": "即時發貨 · 數位商品",
-      "titleLead": "買卡密、儲值、會員，",
-      "titleHl": "秒到帳。",
-      "lede": "遊戲點卡、串流會員、軟體授權、禮品卡、AI 工具 —— 付款後自動發貨，憑證立即送達。",
-      "searchButton": "搜尋",
-      "hot": "熱門：",
-      "trustFast": "極速自動發貨",
-      "trustSecure": "加密結算 · 憑證僅你可見",
-      "trustRefund": "問題訂單及時處理"
-    },
-    "categoriesTitle": "依分類逛",
-    "allCategories": "全部分類",
-    "footer": {
-      "shop": "商城",
-      "support": "支援",
-      "legal": "條款",
-      "tagline": "數位商品自動發貨平台。卡密、授權、儲值，付款即交付。",
-      "faq": "常見問題",
-      "payAlipay": "支付寶",
-      "payWechat": "微信"
-    }
-  },
   "breadcrumb": {
     "label": "麵包屑導航",
     "back": "返回{name}"
@@ -1740,32 +1716,6 @@
     "authInvalid": "資訊不匹配，請重新輸入",
     "authSubmit": "保存並查詢",
     "authClear": "清除已保存資訊"
-  },
-  "storefrontThemes": {
-    "mint": {
-      "eyebrow": "數位好物，輕鬆發現",
-      "title": "給數位生活，",
-      "highlight": "一點新鮮感。",
-      "description": "從實用工具到日常所需，找到適合你的數位商品。",
-      "objectLabel": "數位精選",
-      "collection": "好物陳列"
-    },
-    "paper": {
-      "eyebrow": "一間數位選物商店",
-      "title": "用心挑選，",
-      "highlight": "恰好所需。",
-      "description": "把需要的工具與服務，收進你的日常。慢慢瀏覽，認真選擇。",
-      "indexLabel": "店內索引",
-      "collection": "本期選物"
-    },
-    "mono": {
-      "eyebrow": "為你的下一個想法",
-      "title": "數位裝備，",
-      "highlight": "即刻就位。",
-      "description": "瀏覽數位商品與服務，為創作、工作和日常找到合適的工具。",
-      "objectLabel": "數位空間",
-      "collection": "探索商品"
-    }
   },
   "contactChannels": {
     "telegram": "Telegram",

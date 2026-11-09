@@ -109,19 +109,6 @@ export function useGuestOrders() {
   const statusLabel = (status: string) => orderStatusLabel(t, status)
   const statusVariant = (status: string) => orderStatusVariant(status)
 
-  // vault 模板：BadgeTone → vault pill 类名（classic 不使用）
-  const statusPillClass = (status?: string) => {
-    const map: Record<string, string> = {
-      success: 'pill-done',
-      warning: 'pill-low',
-      danger: 'pill-sale',
-      info: 'pill-stock',
-      accent: 'pill-sale',
-      neutral: 'pill-out',
-    }
-    return map[orderStatusVariant(status)] || 'pill-out'
-  }
-
   const formatMoney = (amount?: string, currency?: string) => {
     if (amount === null || amount === undefined || amount === '') return '-'
     if (currency === null || currency === undefined || currency === '') {
@@ -179,7 +166,6 @@ export function useGuestOrders() {
     changePage,
     statusLabel,
     statusVariant,
-    statusPillClass,
     formatMoney,
     formatDiscountMoney,
     hasDiscountAmount,

@@ -50,7 +50,7 @@ func normalizeSiteSetting(value map[string]interface{}) jsonmap.JSON {
 	normalized["footer_links"] = normalizeSiteFooterLinks(value["footer_links"])
 	normalized[constants.SettingFieldSiteCurrency] = normalizeSiteCurrency(value[constants.SettingFieldSiteCurrency])
 	normalized["template_mode"] = normalizeSiteTemplateMode(value["template_mode"])
-	normalized[constants.SettingFieldStorefrontTemplate] = normalizeStorefrontTemplate(value[constants.SettingFieldStorefrontTemplate])
+	normalized[constants.SettingFieldStorefrontTemplate] = constants.StorefrontTemplateDefault
 
 	if raw, ok := value["languages"]; ok {
 		normalized["languages"] = normalizeSiteLanguages(raw)
@@ -208,7 +208,7 @@ func normalizeSiteBrand(raw interface{}) map[string]interface{} {
 	result["site_name"] = normalizeSettingText(brandMap["site_name"])
 	result["site_url"] = strings.TrimRight(normalizeSettingText(brandMap["site_url"]), "/")
 	result["site_icon"] = normalizeSettingText(brandMap["site_icon"])
-	// 未配置 Logo 时保留空字符串，让前台继续使用各主题原有的 fallback 行为。
+	// 未配置 Logo 时保留空字符串，由前台显示默认品牌标识。
 	result["site_logo"] = normalizeSettingText(brandMap["site_logo"])
 	result["site_description"] = normalizeSiteLocalizedField(brandMap["site_description"])
 	return result
@@ -361,16 +361,6 @@ func normalizeSiteTemplateMode(raw interface{}) string {
 		return "list"
 	}
 	return "card"
-}
-
-// normalizeStorefrontTemplate 归一化店面模板，未知值回退到 classic。
-func normalizeStorefrontTemplate(raw interface{}) string {
-	switch value := normalizeSettingText(raw); value {
-	case constants.StorefrontTemplateClassic, constants.StorefrontTemplateVault,
-		constants.StorefrontTemplateMint, constants.StorefrontTemplatePaper, constants.StorefrontTemplateMono:
-		return value
-	}
-	return constants.StorefrontTemplateDefault
 }
 
 func normalizeNavConfig(value map[string]interface{}) jsonmap.JSON {
