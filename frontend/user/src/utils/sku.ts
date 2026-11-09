@@ -5,7 +5,8 @@ export const normalizeSkuId = (value: unknown) => {
   return integerValue > 0 ? integerValue : 0
 }
 
-const SUPPORTED_LOCALES = ['zh-CN', 'zh-TW', 'en-US'] as const
+// Upstream SKUs may include translations for languages the storefront doesn't offer.
+const localeTagPattern = /^[a-z]{2,3}-(?:[A-Z][a-z]{3}(?:-(?:[A-Z]{2}|\d{3}))?|[A-Z]{2}|\d{3})$/
 
 const normalizeText = (value: unknown) => String(value ?? '').trim()
 
@@ -32,22 +33,17 @@ const isLocalizedObject = (value: unknown): value is Record<string, unknown> => 
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const keys = Object.keys(value)
   if (keys.length === 0) return false
-  return keys.every((key) => SUPPORTED_LOCALES.includes(key as typeof SUPPORTED_LOCALES[number]))
+  return keys.every((key) => localeTagPattern.test(key))
 }
 
 const resolveLocalizedText = (value: unknown, locale?: string) => {
   if (!isLocalizedObject(value)) return ''
-  const rows = value as Record<string, unknown>
-  const chain = localeFallbacks(locale)
-  for (const code of chain) {
-    const text = normalizeText(rows[code])
+  for (const code of [locale, ...localeFallbacks(locale)]) {
+    if (!code) continue
+    const text = normalizeText(value[code])
     if (text) return text
   }
-  for (const code of SUPPORTED_LOCALES) {
-    const text = normalizeText(rows[code])
-    if (text) return text
-  }
-  return ''
+  return Object.values(value).map(normalizeText).find(Boolean) || ''
 }
 
 const parseJSONLike = (value: unknown): unknown => {
