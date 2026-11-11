@@ -45,7 +45,7 @@ const { t, locale } = useI18n()
 const detailLoading = ref(false)
 const detailError = ref('')
 const selectedOrder = ref<AdminOrder | null>(null)
-const procurementOrder = ref<AdminProcurementOrder | null | undefined>(null)
+const procurementOrders = ref<AdminProcurementOrder[]>([])
 
 const refundSubmitting = ref(false)
 const refundError = ref('')
@@ -611,19 +611,22 @@ const fetchOrderDetail = async (orderId: number) => {
   detailLoading.value = true
   detailError.value = ''
   selectedOrder.value = null
-  procurementOrder.value = null
+  procurementOrders.value = []
   try {
     const response = await adminAPI.getOrder(orderId)
-    selectedOrder.value = response.data.data
-    ensureRefundTabAvailable(selectedOrder.value)
-    try {
-      const procRes = await adminAPI.getProcurementOrders({ order_no: selectedOrder.value?.order_no, page_size: 1 })
-      const procList = procRes.data.data
-      if (Array.isArray(procList) && procList.length > 0) {
-        procurementOrder.value = procList[0]
-      }
-    } catch {
-      // silently ignore - procurement order may not exist
+    const order: AdminOrder = response.data.data
+    selectedOrder.value = order
+    ensureRefundTabAvailable(order)
+    const procurementCandidates = order.children?.length
+      ? order.children.filter(child => child.items?.some(item => item.fulfillment_type === 'upstream'))
+      : [order]
+    const results = await Promise.allSettled(procurementCandidates.map(async (candidate) => {
+      const result = await adminAPI.getProcurementOrders({ order_no: candidate.order_no, page_size: 1 })
+      const list = result.data.data
+      return Array.isArray(list) ? list.slice(0, 1) as AdminProcurementOrder[] : []
+    }))
+    if (selectedOrder.value?.id === order.id) {
+      procurementOrders.value = results.flatMap(result => result.status === 'fulfilled' ? result.value : [])
     }
   } catch (err: any) {
     detailError.value = err?.message || t('admin.orders.detailFetchFailed')
@@ -1138,12 +1141,16 @@ watch(
             </div>
           </div>
 
-          <div v-if="procurementOrder" class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+          <div v-for="procurementOrder in procurementOrders" :key="procurementOrder.id" class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
             <h3 class="text-sm font-semibold text-indigo-800 mb-3">{{ t('orderDetail.procurementTitle') }}</h3>
             <div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
                 <span class="text-xs text-muted-foreground">{{ t('procurement.columns.id') }}:</span>
                 <span class="ml-1 font-mono">{{ procurementOrder.id }}</span>
+              </div>
+              <div>
+                <span class="text-xs text-muted-foreground">{{ t('procurement.columns.localOrderNo') }}:</span>
+                <span class="ml-1 break-all font-mono">{{ procurementOrder.local_order_no }}</span>
               </div>
               <div>
                 <span class="text-xs text-muted-foreground">{{ t('procurement.columns.status') }}:</span>

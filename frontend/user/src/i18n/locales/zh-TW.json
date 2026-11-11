@@ -1670,7 +1670,7 @@
     "fulfillmentStatus": "狀態",
     "instructionsTitle": "使用說明",
     "fulfillmentTypes": {
-      "manual": "人工交付",
+      "manual": "平台交付",
       "auto": "自動交付"
     },
     "fulfillmentStatuses": {

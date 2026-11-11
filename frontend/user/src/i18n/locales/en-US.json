@@ -1670,7 +1670,7 @@
     "fulfillmentStatus": "Status",
     "instructionsTitle": "Usage instructions",
     "fulfillmentTypes": {
-      "manual": "Manual",
+      "manual": "Store fulfillment",
       "auto": "Auto"
     },
     "fulfillmentStatuses": {
