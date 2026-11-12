@@ -48,6 +48,17 @@ Runtime directories created on first start: `db/` (SQLite), `uploads/`, `logs/`.
 
 ### MySQL
 
+MySQL requires a server binary or image built from source that includes commit
+`60c621af`. If startup reports `unsupported database driver: mysql`, replace
+the running build. With this repository's Docker Compose file, build and start
+a local image under a separate tag so Compose uses the build that includes
+MySQL support. Set `TAG=local-mysql` in `.env`, then run these commands from
+the repository root on the deployment host:
+
+```bash
+docker compose build dujiao-next && docker compose up -d --no-build --pull never dujiao-next
+```
+
 For a new MySQL 8.4 deployment, create an empty database with a case-sensitive
 collation so identifiers and credentials are compared exactly.
 
@@ -159,7 +170,6 @@ placeholder, which the server rewrites on startup. Consequences for admin code:
 
 **Storefront.** The customer frontend uses the classic theme, with pages in `frontend/user/src/views/`.
 The product layout can still be set to cards or a list through `template_mode`.
-
 
 **i18n.** Both frontends and all API responses are localized — Simplified Chinese, Traditional
 Chinese, and English. Do not hard-code user-facing strings on either side.
