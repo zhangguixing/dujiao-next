@@ -26,7 +26,7 @@
       @submit="handleRecharge"
     />
 
-    <ManualRechargePanel @refresh="refreshCurrentPage" />
+    <ManualRechargePanel :enabled="wallet?.manual_recharge_enabled" @refresh="refreshCurrentPage" />
 
     <WalletTransactionList
       :loading="loading"

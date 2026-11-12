@@ -305,7 +305,13 @@ func (h *UserHandler) GetWallet(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeInternal, "error.user_fetch_failed", err)
 		return
 	}
-	response.Success(c, walletpresenter.NewWalletAccountResp(account))
+	response.Success(c, struct {
+		walletpresenter.WalletAccountResp
+		ManualRechargeEnabled bool `json:"manual_recharge_enabled"`
+	}{
+		WalletAccountResp:     walletpresenter.NewWalletAccountResp(account),
+		ManualRechargeEnabled: h.settings != nil && h.settings.GetManualRechargeEnabled(),
+	})
 }
 
 func (h *UserHandler) GetTransactions(c *gin.Context) {
