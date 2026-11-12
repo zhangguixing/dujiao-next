@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dujiao-next/internal/constants"
 	settingsmessaging "github.com/dujiao-next/internal/modules/settings/schema/messaging"
 	"github.com/dujiao-next/internal/queue"
 	"github.com/dujiao-next/internal/shared/jsonmap"
@@ -13,15 +14,19 @@ import (
 
 var notificationTemplateVariablePattern = regexp.MustCompile(`\{\{\s*([a-zA-Z0-9_]+)\s*\}\}`)
 
-func BuildTemplateVariables(payload queue.NotificationDispatchPayload) map[string]interface{} {
+func BuildTemplateVariables(payload queue.NotificationDispatchPayload, locale string) map[string]interface{} {
 	data := CloneVariables(payload.Data)
 	if data == nil {
 		data = map[string]interface{}{}
 	}
-	data["event_type"] = strings.ToLower(strings.TrimSpace(payload.EventType))
+	eventType := strings.ToLower(strings.TrimSpace(payload.EventType))
+	data["event_type"] = eventType
 	data["biz_type"] = strings.TrimSpace(payload.BizType)
 	data["biz_id"] = fmt.Sprintf("%d", payload.BizID)
 	data["occurred_at"] = time.Now().Format("2006-01-02 15:04:05")
+	if eventType == constants.NotificationEventExceptionAlert {
+		applyExceptionAlertDefaults(data, strings.TrimSpace(payload.BizType), locale)
+	}
 	return data
 }
 

@@ -138,7 +138,7 @@ func (s *Service) dispatchSingleEvent(ctx context.Context, setting settingsmessa
 
 	locale := format.ResolveLocale(payload.Locale, setting.DefaultLocale)
 	template := setting.Templates.TemplateByEvent(payload.EventType).ResolveLocaleTemplate(locale)
-	variables := format.BuildTemplateVariables(payload)
+	variables := format.BuildTemplateVariables(payload, locale)
 	title := format.RenderTemplate(template.Title, variables)
 	body := format.RenderTemplate(template.Body, variables)
 	if strings.TrimSpace(body) == "" {

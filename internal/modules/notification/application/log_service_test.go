@@ -192,6 +192,72 @@ func TestServiceDispatchSingleEventRecordsPerRecipientResult(t *testing.T) {
 	}
 }
 
+func TestServiceDispatchRendersExceptionAlertDetails(t *testing.T) {
+	tests := []struct {
+		name    string
+		bizType string
+		locale  string
+		data    map[string]interface{}
+		want    string
+	}{
+		{
+			name:    "queued procurement failure",
+			bizType: constants.NotificationBizTypeProcurement,
+			locale:  constants.LocaleZhCN,
+			data:    map[string]interface{}{"procurement_order_id": float64(42), "error": "upstream stock unavailable"},
+			want:    "系统异常告警\n\n告警类型：采购异常\n告警级别：error\n当前值：不适用\n阈值：不适用\n详情：upstream stock unavailable",
+		},
+		{
+			name:    "reconciliation mismatch",
+			bizType: constants.NotificationBizTypeReconciliation,
+			locale:  constants.LocaleEnUS,
+			data:    map[string]interface{}{"mismatched_count": float64(3), "message": "Found 3 discrepancies"},
+			want:    "System Exception Alert\n\nType: Reconciliation Mismatch\nLevel: warning\nCurrent: 3\nThreshold: N/A\nDetails: Found 3 discrepancies",
+		},
+		{
+			name:    "payment callback preserves supplied details",
+			bizType: constants.NotificationBizTypePaymentCallback,
+			locale:  constants.LocaleZhTW,
+			data:    map[string]interface{}{"alert_type": "callback_unrecognized", "alert_level": "warning", "message": "支付回調格式無法識別"},
+			want:    "系統異常告警\n\n告警類型：callback_unrecognized\n告警級別：warning\n當前值：不適用\n閾值：不適用\n詳情：支付回調格式無法識別",
+		},
+		{
+			name:    "dashboard alert preserves actual values",
+			bizType: constants.NotificationBizTypeDashboardAlert,
+			locale:  constants.LocaleZhCN,
+			data: map[string]interface{}{
+				"alert_type": "售罄商品", "alert_level": "warning", "alert_value": "2", "alert_threshold": "0",
+				"message": "检测到 2 个售罄商品", "affected_items_summary": "1. 示例商品",
+			},
+			want: "系统异常告警\n\n告警类型：售罄商品\n告警级别：warning\n当前值：2\n阈值：0\n详情：检测到 2 个售罄商品\n1. 示例商品",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setting := settingsmessaging.NotificationCenterDefaultSetting()
+			setting.Channels.Feishu.Enabled = true
+			setting.Channels.Feishu.Recipients = []string{"oc_alerts"}
+			sender := &notificationFeishuStub{}
+			service := NewService(notificationSettingsStub{notification: setting}, nil, nil, nil, nil, nil, sender)
+			if err := service.Dispatch(t.Context(), queue.NotificationDispatchPayload{
+				EventType: constants.NotificationEventExceptionAlert,
+				BizType:   tt.bizType,
+				Locale:    tt.locale,
+				Force:     true,
+				Data:      tt.data,
+			}); err != nil {
+				t.Fatalf("Dispatch failed: %v", err)
+			}
+			if len(sender.calls) != 1 {
+				t.Fatalf("expected one notification, got %d", len(sender.calls))
+			}
+			if got := sender.calls[0].message; got != tt.want {
+				t.Errorf("notification = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestServiceDispatchSingleEventSendsFeishuAndRecordsEachRecipient(t *testing.T) {
 	logService := NewLogService(&notificationLogRepositoryStub{})
 	feishuSender := &notificationFeishuStub{}

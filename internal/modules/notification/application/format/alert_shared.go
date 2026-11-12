@@ -8,6 +8,33 @@ import (
 	settingsstorefront "github.com/dujiao-next/internal/modules/settings/schema/storefront"
 )
 
+func applyExceptionAlertDefaults(data map[string]interface{}, bizType, locale string) {
+	notApplicable := localizedNotificationText(locale, "不适用", "不適用", "N/A")
+	defaults := map[string]string{
+		"alert_value":     notApplicable,
+		"alert_threshold": notApplicable,
+	}
+	switch bizType {
+	case constants.NotificationBizTypeProcurement:
+		defaults["alert_type"] = localizedNotificationText(locale, "采购异常", "採購異常", "Procurement Exception")
+		defaults["alert_level"] = "error"
+		defaults["message"] = PickMessage(data["error"], localizedNotificationText(locale, "未提供错误详情", "未提供錯誤詳情", "No error details provided"))
+	case constants.NotificationBizTypeReconciliation:
+		defaults["alert_type"] = localizedNotificationText(locale, "对账差异", "對帳差異", "Reconciliation Mismatch")
+		defaults["alert_level"] = "warning"
+		defaults["alert_value"] = PickMessage(data["mismatched_count"], notApplicable)
+	case constants.NotificationBizTypePaymentCallback:
+		// 回调告警已提供类型、级别和详情，只需填充不适用的统计字段。
+	default:
+		return
+	}
+	for key, value := range defaults {
+		if toString(data[key]) == "" {
+			data[key] = value
+		}
+	}
+}
+
 func thresholdValueByAlertType(setting settingsstorefront.DashboardAlertSetting, alertType string) int64 {
 	switch alertType {
 	case constants.NotificationAlertTypeOutOfStockProducts:
