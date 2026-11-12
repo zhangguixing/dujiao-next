@@ -30,6 +30,7 @@ type Settings interface {
 	GetConfig(defaults map[string]interface{}) (map[string]interface{}, error)
 	GetWalletRechargeChannelIDs() []uint
 	GetWalletOnlyPayment() bool
+	GetGiftCardPurchaseGuideSlug() string
 	GetAffiliateSettingMap() (map[string]interface{}, error)
 	GetSMTPEnabled() bool
 	GetRegistrationEnabled(defaultValue bool) (bool, error)
@@ -171,6 +172,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	if h.settings.GetWalletOnlyPayment() {
 		data["wallet_only_payment"] = true
 	}
+	data[constants.SettingFieldGiftCardPurchaseGuideSlug] = h.settings.GetGiftCardPurchaseGuideSlug()
 
 	if h.captcha != nil {
 		publicCaptcha, captchaErr := h.captcha.GetPublicSetting()

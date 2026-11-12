@@ -54,6 +54,10 @@ func (a publicConfigSettingsAdapter) GetWalletOnlyPayment() bool {
 	return a.settings != nil && a.settings.GetWalletOnlyPayment()
 }
 
+func (a publicConfigSettingsAdapter) GetGiftCardPurchaseGuideSlug() string {
+	return a.settings.GetGiftCardPurchaseGuideSlug()
+}
+
 func (a publicConfigSettingsAdapter) GetAffiliateSettingMap() (map[string]interface{}, error) {
 	setting, err := a.settings.GetAffiliateSetting()
 	if err != nil {

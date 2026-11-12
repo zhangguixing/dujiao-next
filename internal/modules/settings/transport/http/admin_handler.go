@@ -55,8 +55,9 @@ func (h *AdminHandler) Get(c *gin.Context) {
 	response.Success(c, value)
 }
 
-// settingFieldErrorKeys 复用分销站同名字段的文案，两边校验规则一致。
+// settingFieldErrorKeys 将设置字段的校验错误映射到本地化文案。
 var settingFieldErrorKeys = map[string]string{
+	constants.SettingFieldGiftCardPurchaseGuideSlug: "error.gift_card_purchase_guide_slug_invalid",
 	"contact_qq":            "error.contact_qq_invalid",
 	"contact_wechat":        "error.contact_wechat_invalid",
 	"contact_wechat_qrcode": "error.contact_wechat_qrcode_invalid",

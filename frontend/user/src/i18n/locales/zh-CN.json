@@ -869,6 +869,7 @@
     "giftCard": {
       "title": "礼品卡兑换",
       "subtitle": "输入礼品卡卡密，金额将即时充入钱包余额",
+      "purchaseGuideLink": "查看闲鱼礼品卡购买教程",
       "codeLabel": "礼品卡卡密",
       "codePlaceholder": "请输入礼品卡卡密",
       "redeemButton": "立即兑换",
@@ -1145,6 +1146,7 @@
     "channelAmountMinHint": "该渠道需满足金额大于{min}",
     "channelAmountMaxHint": "该渠道需满足金额小于{max}",
     "walletCoversAll": "钱包余额足以支付全部金额",
+    "giftCardPaymentHint": "没有 USDT？可登录后将本站礼品卡兑换成钱包余额，再用余额支付。",
     "submitButton": "提交订单并支付",
     "submitting": "提交中...",
     "errors": {

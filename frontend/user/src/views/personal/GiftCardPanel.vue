@@ -9,6 +9,14 @@
             </template>
           </PanelHeading>
 
+          <router-link
+            v-if="appStore.giftCardPurchaseGuide"
+            :to="appStore.giftCardPurchaseGuide"
+            class="mb-5 inline-block text-sm font-medium text-primary underline underline-offset-4"
+          >
+            {{ t('personalCenter.giftCard.purchaseGuideLink') }}
+          </router-link>
+
           <Alert v-if="panelAlert" class="mb-5" :variant="pageAlertVariant(panelAlert.level)" :class="pageAlertToneClass(panelAlert.level)">
             <AlertDescription>{{ panelAlert.message }}</AlertDescription>
           </Alert>

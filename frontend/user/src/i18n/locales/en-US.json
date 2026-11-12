@@ -920,6 +920,7 @@
       "codeLabel": "Gift card code",
       "codePlaceholder": "Enter gift card code",
       "redeemButton": "Redeem now",
+      "purchaseGuideLink": "View the Xianyu gift card purchase guide",
       "redeeming": "Redeeming...",
       "resetButton": "Reset",
       "redeemSuccess": "Redeem successful, credited {amount} {currency}",
@@ -1193,6 +1194,7 @@
     "channelAmountMinHint": "This channel requires amount greater than {min}",
     "channelAmountMaxHint": "This channel requires amount less than {max}",
     "walletCoversAll": "Wallet balance covers the full amount",
+    "giftCardPaymentHint": "No USDT? Sign in to redeem a gift card for store wallet balance, then pay with your balance.",
     "submitButton": "Place Order & Pay",
     "submitting": "Submitting...",
     "errors": {

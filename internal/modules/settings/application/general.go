@@ -420,6 +420,35 @@ func (s *Service) GetWalletOnlyPayment() bool {
 	return settingsvalue.ParseBool(raw)
 }
 
+// GetGiftCardPurchaseGuideSlug 返回礼品卡购买教程的站内博客标识。
+func (s *Service) GetGiftCardPurchaseGuideSlug() string {
+	value, err := s.GetByKey(constants.SettingKeyWalletConfig)
+	if err != nil {
+		return ""
+	}
+	slug, _ := giftCardPurchaseGuideSlug(value[constants.SettingFieldGiftCardPurchaseGuideSlug])
+	return slug
+}
+
+func validateWalletSetting(value jsonmap.JSON) error {
+	if _, valid := giftCardPurchaseGuideSlug(value[constants.SettingFieldGiftCardPurchaseGuideSlug]); !valid {
+		return &SettingFieldError{Field: constants.SettingFieldGiftCardPurchaseGuideSlug}
+	}
+	return nil
+}
+
+func giftCardPurchaseGuideSlug(value any) (string, bool) {
+	if value == nil {
+		return "", true
+	}
+	slug, ok := value.(string)
+	slug = strings.TrimSpace(slug)
+	if !ok || slug == "." || slug == ".." || strings.ContainsAny(slug, "/\\?#%\r\n\t") {
+		return "", false
+	}
+	return slug, true
+}
+
 // GetManualRechargeEnabled returns whether users may submit QR-code transfer recharge requests.
 // The safe default is disabled until an operator has configured and enabled it.
 func (s *Service) GetManualRechargeEnabled() bool {

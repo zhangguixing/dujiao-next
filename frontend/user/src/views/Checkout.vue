@@ -298,6 +298,17 @@
             <div v-if="!requiresOnlineChannel" class="text-xs text-success">
               {{ t('checkout.walletCoversAll') }}
             </div>
+            <div v-if="requiresOnlineChannel && appStore.giftCardPurchaseGuide" class="mt-3 rounded-lg border bg-secondary px-3 py-2 text-sm">
+              <p class="text-muted-foreground">{{ t('checkout.giftCardPaymentHint') }}</p>
+              <router-link
+                :to="appStore.giftCardPurchaseGuide"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-1 inline-block font-medium text-primary underline underline-offset-4"
+              >
+                {{ t('personalCenter.giftCard.purchaseGuideLink') }}
+              </router-link>
+            </div>
           </div>
 
           <Button
@@ -327,8 +338,10 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCheckout } from '../composables/useCheckout'
+import { useAppStore } from '../stores/app'
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
 const {
   userAuthStore, getLocalizedText, formatPrice, getImageUrl,

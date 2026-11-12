@@ -16,6 +16,7 @@ const { t } = useI18n()
 const form = reactive({
   recharge_channel_ids: [] as number[],
   wallet_only_payment: false,
+  gift_card_purchase_guide_slug: '',
   manual_recharge_enabled: false,
   manual_recharge_min_amount: '',
 })
@@ -32,11 +33,13 @@ const loadConfig = async () => {
       form.recharge_channel_ids = []
     }
     form.wallet_only_payment = !!data?.wallet_only_payment
+    form.gift_card_purchase_guide_slug = typeof data?.gift_card_purchase_guide_slug === 'string' ? data.gift_card_purchase_guide_slug : ''
     form.manual_recharge_enabled = !!data?.manual_recharge_enabled
     form.manual_recharge_min_amount = String(data?.manual_recharge_min_amount || '')
   } catch {
     form.recharge_channel_ids = []
     form.wallet_only_payment = false
+    form.gift_card_purchase_guide_slug = ''
     form.manual_recharge_enabled = false
     form.manual_recharge_min_amount = ''
   }
@@ -68,6 +71,7 @@ const save = async () => {
       value: {
         recharge_channel_ids: form.recharge_channel_ids,
         wallet_only_payment: form.wallet_only_payment,
+        gift_card_purchase_guide_slug: form.gift_card_purchase_guide_slug.trim(),
         manual_recharge_enabled: form.manual_recharge_enabled,
         manual_recharge_min_amount: form.manual_recharge_min_amount.trim() || '0',
       },
@@ -104,6 +108,19 @@ onMounted(() => {
             <p class="text-xs text-muted-foreground mt-0.5">{{ t('admin.settings.wallet.walletOnlyPaymentTip') }}</p>
           </div>
           <Switch id="wallet-only-payment" v-model="form.wallet_only_payment" />
+        </div>
+        <div class="space-y-2 border-t border-border pt-4">
+          <Label for="gift-card-purchase-guide-slug" class="text-sm font-medium">{{ t('admin.settings.wallet.giftCardPurchaseGuide') }}</Label>
+          <Input
+            id="gift-card-purchase-guide-slug"
+            v-model="form.gift_card_purchase_guide_slug"
+            class="max-w-sm"
+            placeholder="gift-card-guide"
+            aria-describedby="gift-card-purchase-guide-hint"
+          />
+          <p id="gift-card-purchase-guide-hint" class="text-xs text-muted-foreground">
+            {{ t('admin.settings.wallet.giftCardPurchaseGuideHint') }}
+          </p>
         </div>
         <div class="flex items-center justify-between border-t border-border pt-4">
           <div>

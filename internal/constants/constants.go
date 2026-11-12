@@ -499,10 +499,11 @@ const (
 
 	SettingKeyNavConfig = "nav_config"
 
-	SettingKeyWalletConfig              = "wallet_config"
-	SettingFieldWalletOnlyPayment       = "wallet_only_payment"
-	SettingFieldManualRechargeEnabled   = "manual_recharge_enabled"
-	SettingFieldManualRechargeMinAmount = "manual_recharge_min_amount"
+	SettingKeyWalletConfig                = "wallet_config"
+	SettingFieldWalletOnlyPayment         = "wallet_only_payment"
+	SettingFieldGiftCardPurchaseGuideSlug = "gift_card_purchase_guide_slug"
+	SettingFieldManualRechargeEnabled     = "manual_recharge_enabled"
+	SettingFieldManualRechargeMinAmount   = "manual_recharge_min_amount"
 
 	SettingKeyPaymentConfig                = "payment_config"
 	SettingFieldCustomerFeeEnabled         = "customer_fee_enabled"

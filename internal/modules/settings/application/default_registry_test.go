@@ -1,6 +1,7 @@
 package settingsapp
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -53,7 +54,7 @@ func TestSettingServiceUpdateWithEffectsDescribesCacheImpact(t *testing.T) {
 			wantEffect: EffectInvalidatePublicConfigCache,
 		},
 		{
-			name:       "wallet config is effect only",
+			name:       "wallet config invalidates public cache",
 			key:        constants.SettingKeyWalletConfig,
 			value:      map[string]interface{}{constants.SettingFieldWalletOnlyPayment: true},
 			wantEffect: EffectInvalidatePublicConfigCache,
@@ -88,6 +89,36 @@ func TestSettingServiceUpdateWithEffectsDescribesCacheImpact(t *testing.T) {
 	}
 	if len(result.Effects) != 0 {
 		t.Fatalf("unknown setting emitted effects: %#v", result.Effects)
+	}
+}
+
+func TestWalletGiftCardPurchaseGuideSetting(t *testing.T) {
+	service := NewService(newMockSettingRepo())
+	if got := service.GetGiftCardPurchaseGuideSlug(); got != "" {
+		t.Fatalf("unconfigured guide = %q, want empty", got)
+	}
+	key := constants.SettingFieldGiftCardPurchaseGuideSlug
+	if _, err := service.Update(constants.SettingKeyWalletConfig, jsonmap.JSON{key: " gift-card-guide "}); err != nil {
+		t.Fatalf("save guide: %v", err)
+	}
+	if got := service.GetGiftCardPurchaseGuideSlug(); got != "gift-card-guide" {
+		t.Fatalf("saved guide = %q", got)
+	}
+	for _, invalid := range []string{"https://example.com/blog/guide", "../guide", "guide?redirect=other", "guide%2Fother"} {
+		_, err := service.Update(constants.SettingKeyWalletConfig, jsonmap.JSON{key: invalid})
+		var fieldErr *SettingFieldError
+		if !errors.As(err, &fieldErr) || fieldErr.Field != key {
+			t.Errorf("saving invalid slug %q returned %v", invalid, err)
+		}
+	}
+	if got := service.GetGiftCardPurchaseGuideSlug(); got != "gift-card-guide" {
+		t.Fatalf("invalid update changed guide to %q", got)
+	}
+	if _, err := service.Update(constants.SettingKeyWalletConfig, jsonmap.JSON{key: ""}); err != nil {
+		t.Fatalf("clear guide: %v", err)
+	}
+	if got := service.GetGiftCardPurchaseGuideSlug(); got != "" {
+		t.Fatalf("cleared guide = %q, want empty", got)
 	}
 }
 

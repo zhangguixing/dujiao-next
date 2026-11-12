@@ -23,6 +23,10 @@ export const useAppStore = defineStore('app', () => {
         return String(config.value?.tenant?.mode || '').trim().toLowerCase() === 'reseller'
     })
     const canAccessResellerConsole = computed(() => !!config.value && !isResellerTenant.value)
+    const giftCardPurchaseGuide = computed(() => {
+        const slug = config.value?.gift_card_purchase_guide_slug
+        return typeof slug === 'string' && slug ? { name: 'blog-detail', params: { slug } } : null
+    })
 
     // 设置语言：同时驱动 vue-i18n（内部按需加载语言包）
     const setLocale = (newLocale: string) => {
@@ -118,6 +122,7 @@ export const useAppStore = defineStore('app', () => {
         serverTimeOffset,
         isResellerTenant,
         canAccessResellerConsole,
+        giftCardPurchaseGuide,
         setLocale,
         loadConfig,
         applySEO,

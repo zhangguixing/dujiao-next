@@ -82,8 +82,9 @@ var defaultSettingRegistry = MustNewRegistry(
 		Effects:   []Effect{EffectInvalidatePublicConfigCache},
 	},
 	Definition{
-		Key:     constants.SettingKeyWalletConfig,
-		Effects: []Effect{EffectInvalidatePublicConfigCache},
+		Key:      constants.SettingKeyWalletConfig,
+		Validate: validateWalletSetting,
+		Effects:  []Effect{EffectInvalidatePublicConfigCache},
 	},
 	Definition{
 		Key:       constants.SettingKeyPaymentConfig,

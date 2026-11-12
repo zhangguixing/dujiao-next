@@ -920,6 +920,7 @@
       "codeLabel": "禮品卡卡密",
       "codePlaceholder": "請輸入禮品卡卡密",
       "redeemButton": "立即兌換",
+      "purchaseGuideLink": "查看閒魚禮品卡購買教學",
       "redeeming": "兌換中...",
       "resetButton": "重置",
       "redeemSuccess": "兌換成功，已到帳 {amount} {currency}",
@@ -1193,6 +1194,7 @@
     "channelAmountMinHint": "該渠道需滿足金額大於{min}",
     "channelAmountMaxHint": "該渠道需滿足金額小於{max}",
     "walletCoversAll": "錢包餘額足以支付全部金額",
+    "giftCardPaymentHint": "沒有 USDT？可登入後將本站禮品卡兌換為錢包餘額，再用餘額付款。",
     "submitButton": "提交訂單並支付",
     "submitting": "提交中...",
     "errors": {
