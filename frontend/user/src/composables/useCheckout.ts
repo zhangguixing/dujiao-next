@@ -275,10 +275,10 @@ export function useCheckout() {
   const guestPassword = ref('')
   const GUEST_PASSWORD_MIN_LENGTH = 6
   const guestPasswordValid = computed(() => guestPassword.value.trim().length >= GUEST_PASSWORD_MIN_LENGTH)
-  const guestCaptchaPayload = ref<CaptchaPayload>({})
-  const guestTurnstileToken = ref('')
-  const guestImageCaptchaRef = ref<InstanceType<typeof ImageCaptcha> | null>(null)
-  const guestTurnstileRef = ref<InstanceType<typeof TurnstileCaptcha> | null>(null)
+  const checkoutCaptchaPayload = ref<CaptchaPayload>({})
+  const checkoutTurnstileToken = ref('')
+  const checkoutImageCaptchaRef = ref<InstanceType<typeof ImageCaptcha> | null>(null)
+  const checkoutTurnstileRef = ref<InstanceType<typeof TurnstileCaptcha> | null>(null)
 
   const manualFieldTypes = new Set(['text', 'textarea', 'phone', 'email', 'number', 'select', 'radio', 'checkbox'])
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -548,32 +548,39 @@ export function useCheckout() {
 
   const captchaConfig = computed(() => appStore.config?.captcha || null)
   const captchaProvider = computed(() => String(captchaConfig.value?.provider || 'none'))
-  const guestCaptchaEnabled = computed(() => {
-    if (!isGuestCheckout.value) return false
+  const checkoutCaptchaEnabled = computed(() => {
+    if (!userAuthStore.isAuthenticated && !isGuestCheckout.value) return false
     return !!captchaConfig.value?.scenes?.guest_create_order && captchaProvider.value !== 'none'
   })
-  const guestTurnstileSiteKey = computed(() => String(captchaConfig.value?.turnstile?.site_key || ''))
+  const checkoutTurnstileSiteKey = computed(() => String(captchaConfig.value?.turnstile?.site_key || ''))
+  const checkoutCaptchaValid = computed(() => {
+    if (!checkoutCaptchaEnabled.value) return true
+    if (captchaProvider.value === 'image') {
+      return Boolean(checkoutCaptchaPayload.value.captcha_id && checkoutCaptchaPayload.value.captcha_code)
+    }
+    return captchaProvider.value === 'turnstile' && Boolean(checkoutTurnstileToken.value)
+  })
 
-  const getGuestCaptchaPayload = (): CaptchaPayload | undefined => {
-    if (!guestCaptchaEnabled.value) return undefined
+  const getCheckoutCaptchaPayload = (): CaptchaPayload | undefined => {
+    if (!checkoutCaptchaEnabled.value) return undefined
     if (captchaProvider.value === 'image') {
       return {
-        captcha_id: guestCaptchaPayload.value.captcha_id || '',
-        captcha_code: guestCaptchaPayload.value.captcha_code || '',
+        captcha_id: checkoutCaptchaPayload.value.captcha_id || '',
+        captcha_code: checkoutCaptchaPayload.value.captcha_code || '',
       }
     }
     if (captchaProvider.value === 'turnstile') {
       return {
-        turnstile_token: guestTurnstileToken.value,
+        turnstile_token: checkoutTurnstileToken.value,
       }
     }
     return undefined
   }
 
-  const handleGuestCaptchaConfigStale = async () => {
+  const handleCheckoutCaptchaConfigStale = async () => {
     await appStore.loadConfig(true)
-    guestCaptchaPayload.value = {}
-    guestTurnstileToken.value = ''
+    checkoutCaptchaPayload.value = {}
+    checkoutTurnstileToken.value = ''
   }
 
   const canSubmit = computed(() => {
@@ -586,17 +593,11 @@ export function useCheckout() {
     if (walletOnlyPayment.value && expectedOnlinePayCents.value > 0) return false
     if (!walletOnlyPayment.value && requiresOnlineChannel.value && !selectedChannelId.value) return false
     if (requiresOnlineChannel.value && selectedChannelAmountHint.value) return false
-    if (userAuthStore.isAuthenticated) return true
-    if (checkoutMode.value !== 'guest') return false
-    if (!guestEmail.value.trim() || !guestPassword.value.trim() || !guestEmailValid.value || !guestPasswordValid.value) return false
-    if (!guestCaptchaEnabled.value) return true
-    if (captchaProvider.value === 'image') {
-      return Boolean(guestCaptchaPayload.value.captcha_id && guestCaptchaPayload.value.captcha_code)
+    if (!userAuthStore.isAuthenticated) {
+      if (!isGuestCheckout.value) return false
+      if (!guestEmail.value.trim() || !guestPassword.value.trim() || !guestEmailValid.value || !guestPasswordValid.value) return false
     }
-    if (captchaProvider.value === 'turnstile') {
-      return Boolean(guestTurnstileToken.value)
-    }
-    return false
+    return checkoutCaptchaValid.value
   })
 
   const submitBlockedReason = computed(() => {
@@ -616,20 +617,13 @@ export function useCheckout() {
     if (walletOnlyPayment.value && expectedOnlinePayCents.value > 0) return t('payment.walletInsufficientHint')
     if (!walletOnlyPayment.value && requiresOnlineChannel.value && !selectedChannelId.value) return t('checkout.errors.selectPayment')
     if (requiresOnlineChannel.value && selectedChannelAmountHint.value) return selectedChannelAmountHint.value
-    if (userAuthStore.isAuthenticated) return ''
-    if (checkoutMode.value !== 'guest') return t('checkout.errors.loginOrGuest')
-    if (!guestEmail.value.trim() || !guestPassword.value.trim()) return t('checkout.errors.missingGuest')
-    if (!guestEmailValid.value) return t('error.email_invalid')
-    if (!guestPasswordValid.value) return t('checkout.errors.guestPasswordTooShort')
-    if (guestCaptchaEnabled.value) {
-      if (captchaProvider.value === 'image' && (!guestCaptchaPayload.value.captcha_id || !guestCaptchaPayload.value.captcha_code)) {
-        return t('auth.common.captchaRequired')
-      }
-      if (captchaProvider.value === 'turnstile' && !guestTurnstileToken.value) {
-        return t('auth.common.captchaRequired')
-      }
+    if (!userAuthStore.isAuthenticated) {
+      if (!isGuestCheckout.value) return t('checkout.errors.loginOrGuest')
+      if (!guestEmail.value.trim() || !guestPassword.value.trim()) return t('checkout.errors.missingGuest')
+      if (!guestEmailValid.value) return t('error.email_invalid')
+      if (!guestPasswordValid.value) return t('checkout.errors.guestPasswordTooShort')
     }
-    return ''
+    return checkoutCaptchaValid.value ? '' : t('auth.common.captchaRequired')
   })
 
   const previewStatusText = computed(() => couponRefreshing.value
@@ -819,6 +813,7 @@ export function useCheckout() {
         ...buildOrderPayload(),
         channel_id: requiresOnlineChannel.value ? (selectedChannelId.value || undefined) : undefined,
         use_balance: useBalance.value,
+        captcha_payload: getCheckoutCaptchaPayload(),
       }
 
       let responseData: any
@@ -831,7 +826,6 @@ export function useCheckout() {
           ...payload,
           email: guestEmail.value.trim(),
           order_password: guestPassword.value,
-          captcha_payload: getGuestCaptchaPayload(),
         })
         saveGuestOrderAuth({
           email: guestEmail.value.trim(),
@@ -853,12 +847,12 @@ export function useCheckout() {
       router.push(`/pay?${query}`)
     } catch (err: any) {
       error.value = err.message || t('checkout.errors.submitFailed')
-      if (guestCaptchaEnabled.value && captchaProvider.value === 'image') {
-        guestImageCaptchaRef.value?.refresh()
+      if (checkoutCaptchaEnabled.value && captchaProvider.value === 'image') {
+        checkoutImageCaptchaRef.value?.refresh()
       }
-      if (guestCaptchaEnabled.value && captchaProvider.value === 'turnstile') {
-        guestTurnstileRef.value?.reset()
-        guestTurnstileToken.value = ''
+      if (checkoutCaptchaEnabled.value && captchaProvider.value === 'turnstile') {
+        checkoutTurnstileRef.value?.reset()
+        checkoutTurnstileToken.value = ''
       }
     } finally {
       submitting.value = false
@@ -1136,14 +1130,14 @@ export function useCheckout() {
     guestEmail,
     guestPassword,
     guestEmailValid,
-    guestCaptchaEnabled,
+    checkoutCaptchaEnabled,
     captchaProvider,
-    guestCaptchaPayload,
-    guestTurnstileToken,
-    guestTurnstileSiteKey,
-    guestImageCaptchaRef,
-    guestTurnstileRef,
-    handleGuestCaptchaConfigStale,
+    checkoutCaptchaPayload,
+    checkoutTurnstileToken,
+    checkoutTurnstileSiteKey,
+    checkoutImageCaptchaRef,
+    checkoutTurnstileRef,
+    handleCheckoutCaptchaConfigStale,
     // preview amounts
     previewCurrency,
     previewOriginal,

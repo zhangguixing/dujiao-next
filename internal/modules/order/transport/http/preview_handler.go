@@ -86,11 +86,12 @@ type OrderItemRequest struct {
 
 // CreateOrderRequest 用户订单预览/创建请求体（preview 使用）。
 type CreateOrderRequest struct {
-	Items               []OrderItemRequest      `json:"items" binding:"required"`
-	CouponCode          string                  `json:"coupon_code"`
-	AffiliateCode       string                  `json:"affiliate_code"`
-	AffiliateVisitorKey string                  `json:"affiliate_visitor_key"`
-	ManualFormData      map[string]jsonmap.JSON `json:"manual_form_data"`
+	Items               []OrderItemRequest                `json:"items" binding:"required"`
+	CouponCode          string                            `json:"coupon_code"`
+	AffiliateCode       string                            `json:"affiliate_code"`
+	AffiliateVisitorKey string                            `json:"affiliate_visitor_key"`
+	ManualFormData      map[string]jsonmap.JSON           `json:"manual_form_data"`
+	CaptchaPayload      captchahttp.CaptchaPayloadRequest `json:"captcha_payload"`
 }
 
 // CreateGuestOrderRequest 游客订单预览请求体。

@@ -106,66 +106,70 @@
           </div>
 
           <div
-            v-if="!userAuthStore.isAuthenticated"
+            v-if="!userAuthStore.isAuthenticated || checkoutCaptchaEnabled"
             class="space-y-4 rounded-2xl border bg-card text-card-foreground p-6"
           >
-            <h2 class="text-lg font-bold text-foreground">{{ t('checkout.modeTitle') }}</h2>
-            <div class="flex flex-wrap gap-3">
-              <Button
-                :variant="checkoutMode === 'guest' ? 'default' : 'secondary'"
-                @click="checkoutMode = 'guest'"
-              >
-                {{ t('checkout.guestPurchase') }}
-              </Button>
-              <Button as-child variant="secondary">
-                <router-link to="/auth/login">
-                  {{ t('checkout.memberPurchase') }}
-                </router-link>
-              </Button>
-            </div>
+            <template v-if="!userAuthStore.isAuthenticated">
+              <h2 class="text-lg font-bold text-foreground">{{ t('checkout.modeTitle') }}</h2>
+              <div class="flex flex-wrap gap-3">
+                <Button
+                  :variant="checkoutMode === 'guest' ? 'default' : 'secondary'"
+                  @click="checkoutMode = 'guest'"
+                >
+                  {{ t('checkout.guestPurchase') }}
+                </Button>
+                <Button as-child variant="secondary">
+                  <router-link to="/auth/login">
+                    {{ t('checkout.memberPurchase') }}
+                  </router-link>
+                </Button>
+              </div>
 
-            <div v-if="checkoutMode === 'guest'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Input
-                v-model="guestEmail"
-                type="email"
-                class="h-11"
-                :placeholder="t('checkout.guestEmailPlaceholder')"
-              />
-              <Input
-                v-model="guestPassword"
-                type="password"
-                class="h-11"
-                :placeholder="t('checkout.guestPasswordPlaceholder')"
-              />
-            </div>
+              <div v-if="checkoutMode === 'guest'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Input
+                  v-model="guestEmail"
+                  type="email"
+                  class="h-11"
+                  :placeholder="t('checkout.guestEmailPlaceholder')"
+                />
+                <Input
+                  v-model="guestPassword"
+                  type="password"
+                  class="h-11"
+                  :placeholder="t('checkout.guestPasswordPlaceholder')"
+                />
+              </div>
+            </template>
 
-            <div v-if="checkoutMode === 'guest' && guestCaptchaEnabled" class="space-y-2">
+            <div v-if="checkoutCaptchaEnabled" class="space-y-2">
               <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{{ t('auth.common.captchaLabel') }}</p>
               <ImageCaptcha
                 v-if="captchaProvider === 'image'"
-                ref="guestImageCaptchaRef"
-                v-model="guestCaptchaPayload"
+                ref="checkoutImageCaptchaRef"
+                v-model="checkoutCaptchaPayload"
                 :disabled="submitting"
-                @config-stale="handleGuestCaptchaConfigStale"
+                @config-stale="handleCheckoutCaptchaConfigStale"
               />
               <TurnstileCaptcha
                 v-else-if="captchaProvider === 'turnstile'"
-                ref="guestTurnstileRef"
-                v-model="guestTurnstileToken"
-                :site-key="guestTurnstileSiteKey"
+                ref="checkoutTurnstileRef"
+                v-model="checkoutTurnstileToken"
+                :site-key="checkoutTurnstileSiteKey"
               />
             </div>
 
-            <div v-if="checkoutMode === 'guest'" class="mb-3 rounded-xl border border-success/40 bg-success/10 p-3 text-sm text-success">
-              <p class="font-semibold">{{ t('checkout.guestInstructions.title') }}</p>
-              <ul class="mt-2 space-y-1 list-disc pl-5">
-                <li>{{ t('checkout.guestInstructions.email') }}</li>
-                <li>{{ t('checkout.guestInstructions.password') }}</li>
-              </ul>
-            </div>
-            <p v-if="checkoutMode === 'guest' && guestEmail && !guestEmailValid" class="text-xs text-destructive">
-              {{ t('error.email_invalid') }}
-            </p>
+            <template v-if="!userAuthStore.isAuthenticated && checkoutMode === 'guest'">
+              <div class="mb-3 rounded-xl border border-success/40 bg-success/10 p-3 text-sm text-success">
+                <p class="font-semibold">{{ t('checkout.guestInstructions.title') }}</p>
+                <ul class="mt-2 space-y-1 list-disc pl-5">
+                  <li>{{ t('checkout.guestInstructions.email') }}</li>
+                  <li>{{ t('checkout.guestInstructions.password') }}</li>
+                </ul>
+              </div>
+              <p v-if="guestEmail && !guestEmailValid" class="text-xs text-destructive">
+                {{ t('error.email_invalid') }}
+              </p>
+            </template>
           </div>
         </div>
 
@@ -334,8 +338,8 @@ const {
   manualFormProducts, manualFormData, submitAttempted, getManualFieldLabel, getManualFieldPlaceholder, manualFieldError,
   couponCode, isResellerTenant,
   checkoutMode, guestEmail, guestPassword, guestEmailValid,
-  guestCaptchaEnabled, captchaProvider, guestCaptchaPayload, guestTurnstileToken, guestTurnstileSiteKey,
-  guestImageCaptchaRef, guestTurnstileRef, handleGuestCaptchaConfigStale,
+  checkoutCaptchaEnabled, captchaProvider, checkoutCaptchaPayload, checkoutTurnstileToken, checkoutTurnstileSiteKey,
+  checkoutImageCaptchaRef, checkoutTurnstileRef, handleCheckoutCaptchaConfigStale,
   previewCurrency, previewOriginal, previewCoupon, previewPromotion, previewWholesale, previewMemberDiscount, previewTotal,
   previewLoading, couponRefreshing, previewStatusText, hasPositiveAmount, formatDiscountPrice, checkoutAlert,
   showBalanceOption, walletLoading, walletBalance, useBalance, walletOnlyPayment,
@@ -347,6 +351,6 @@ const {
 
 // 这两个引用仅通过模板字符串 ref 绑定（刷新/重置逻辑在 composable 内），
 // vue-tsc 不将字符串模板 ref 计为使用，这里显式标记避免 noUnusedLocals 误报。
-void guestImageCaptchaRef
-void guestTurnstileRef
+void checkoutImageCaptchaRef
+void checkoutTurnstileRef
 </script>

@@ -28,7 +28,7 @@ type OrderCreateService interface {
 	CreateGuestOrder(input CreateGuestOrderInput) (*orderdomain.Order, error)
 }
 
-// GuestCreateCaptcha 游客下单验证码端口。
+// GuestCreateCaptcha 验证订单创建，沿用原游客下单验证码场景。
 type GuestCreateCaptcha interface {
 	VerifyGuestCreateOrder(payload captchahttp.CaptchaPayloadRequest, clientIP string) error
 }
@@ -58,13 +58,14 @@ type OrderPaymentCreator interface {
 
 // CreateOrderAndPayRequest 创建订单并发起支付请求
 type CreateOrderAndPayRequest struct {
-	Items               []OrderItemRequest      `json:"items" binding:"required"`
-	CouponCode          string                  `json:"coupon_code"`
-	AffiliateCode       string                  `json:"affiliate_code"`
-	AffiliateVisitorKey string                  `json:"affiliate_visitor_key"`
-	ManualFormData      map[string]jsonmap.JSON `json:"manual_form_data"`
-	ChannelID           uint                    `json:"channel_id"`
-	UseBalance          bool                    `json:"use_balance"`
+	Items               []OrderItemRequest                `json:"items" binding:"required"`
+	CouponCode          string                            `json:"coupon_code"`
+	AffiliateCode       string                            `json:"affiliate_code"`
+	AffiliateVisitorKey string                            `json:"affiliate_visitor_key"`
+	ManualFormData      map[string]jsonmap.JSON           `json:"manual_form_data"`
+	ChannelID           uint                              `json:"channel_id"`
+	UseBalance          bool                              `json:"use_balance"`
+	CaptchaPayload      captchahttp.CaptchaPayloadRequest `json:"captcha_payload"`
 }
 
 // CreateGuestOrderAndPayRequest 游客创建订单并发起支付请求
@@ -107,6 +108,9 @@ func (h *CreateHandler) CreateOrder(c *gin.Context) {
 		ginutil.RespondBindError(c, err)
 		return
 	}
+	if !h.verifyCreateCaptcha(c, req.CaptchaPayload) {
+		return
+	}
 
 	order, err := h.orders.CreateOrder(CreateOrderInput{
 		UserID:              uid,
@@ -135,7 +139,7 @@ func (h *CreateHandler) CreateGuestOrder(c *gin.Context) {
 		ginutil.RespondBindError(c, err)
 		return
 	}
-	if !h.verifyGuestCreateCaptcha(c, req.CaptchaPayload) {
+	if !h.verifyCreateCaptcha(c, req.CaptchaPayload) {
 		return
 	}
 
@@ -170,6 +174,9 @@ func (h *CreateHandler) CreateOrderAndPay(c *gin.Context) {
 	var req CreateOrderAndPayRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ginutil.RespondBindError(c, err)
+		return
+	}
+	if !h.verifyCreateCaptcha(c, req.CaptchaPayload) {
 		return
 	}
 
@@ -209,7 +216,7 @@ func (h *CreateHandler) CreateGuestOrderAndPay(c *gin.Context) {
 		ginutil.RespondBindError(c, err)
 		return
 	}
-	if !h.verifyGuestCreateCaptcha(c, req.CaptchaPayload) {
+	if !h.verifyCreateCaptcha(c, req.CaptchaPayload) {
 		return
 	}
 
@@ -243,7 +250,7 @@ func (h *CreateHandler) CreateGuestOrderAndPay(c *gin.Context) {
 	h.respondCreateAndPay(c, order, orderResp, req.ChannelID, false)
 }
 
-func (h *CreateHandler) verifyGuestCreateCaptcha(c *gin.Context, payload captchahttp.CaptchaPayloadRequest) bool {
+func (h *CreateHandler) verifyCreateCaptcha(c *gin.Context, payload captchahttp.CaptchaPayloadRequest) bool {
 	if h.captcha == nil {
 		return true
 	}
