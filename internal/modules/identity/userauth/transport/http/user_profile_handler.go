@@ -6,6 +6,7 @@ import (
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
 
 	userpresenter "github.com/dujiao-next/internal/modules/identity/userauth/transport/presenter"
+	ordercontract "github.com/dujiao-next/internal/modules/order/contract"
 	"github.com/dujiao-next/internal/platform/http/ginutil"
 	"github.com/dujiao-next/internal/platform/http/response"
 
@@ -28,14 +29,15 @@ type UserProfileService interface {
 
 // UserProfileHandler 处理当前用户资料 HTTP 请求。
 type UserProfileHandler struct {
-	service UserProfileService
+	service  UserProfileService
+	spending ordercontract.MemberSpendReader
 }
 
-func NewUserProfileHandler(service UserProfileService) *UserProfileHandler {
+func NewUserProfileHandler(service UserProfileService, spending ordercontract.MemberSpendReader) *UserProfileHandler {
 	if service == nil {
 		panic("user profile handler: service is nil")
 	}
-	return &UserProfileHandler{service: service}
+	return &UserProfileHandler{service: service, spending: spending}
 }
 
 // UserProfileUpdateRequest 更新资料请求。
@@ -78,7 +80,17 @@ func (h *UserProfileHandler) userProfileResponse(user *userdomain.User) (userpre
 	if err != nil {
 		return userpresenter.UserProfileResp{}, err
 	}
-	return userpresenter.NewUserProfileResp(user, emailMode, passwordMode), nil
+	return profileWithNetSpending(h.spending, user, emailMode, passwordMode)
+}
+
+func profileWithNetSpending(spending ordercontract.MemberSpendReader, user *userdomain.User, emailMode, passwordMode string) (userpresenter.UserProfileResp, error) {
+	netSpent, err := spending.NetPaidTotalByUser(user.ID)
+	if err != nil {
+		return userpresenter.UserProfileResp{}, err
+	}
+	profile := userpresenter.NewUserProfileResp(user, emailMode, passwordMode)
+	profile.TotalSpent = netSpent
+	return profile, nil
 }
 
 // UpdateUserProfile 更新用户资料。

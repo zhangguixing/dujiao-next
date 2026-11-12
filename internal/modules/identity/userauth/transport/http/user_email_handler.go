@@ -8,6 +8,7 @@ import (
 
 	"github.com/dujiao-next/internal/i18n"
 	userpresenter "github.com/dujiao-next/internal/modules/identity/userauth/transport/presenter"
+	ordercontract "github.com/dujiao-next/internal/modules/order/contract"
 	"github.com/dujiao-next/internal/platform/http/ginutil"
 	"github.com/dujiao-next/internal/platform/http/response"
 
@@ -37,14 +38,15 @@ type UserEmailService interface {
 
 // UserEmailHandler 处理当前用户更换邮箱 HTTP 请求。
 type UserEmailHandler struct {
-	service UserEmailService
+	service  UserEmailService
+	spending ordercontract.MemberSpendReader
 }
 
-func NewUserEmailHandler(service UserEmailService) *UserEmailHandler {
+func NewUserEmailHandler(service UserEmailService, spending ordercontract.MemberSpendReader) *UserEmailHandler {
 	if service == nil {
 		panic("user email handler: service is nil")
 	}
-	return &UserEmailHandler{service: service}
+	return &UserEmailHandler{service: service, spending: spending}
 }
 
 // ChangeEmailSendCodeRequest 更换邮箱验证码请求。
@@ -153,5 +155,5 @@ func (h *UserEmailHandler) changeEmailProfileResponse(user *userdomain.User) (us
 	if err != nil {
 		return userpresenter.UserProfileResp{}, err
 	}
-	return userpresenter.NewUserProfileResp(user, emailMode, passwordMode), nil
+	return profileWithNetSpending(h.spending, user, emailMode, passwordMode)
 }

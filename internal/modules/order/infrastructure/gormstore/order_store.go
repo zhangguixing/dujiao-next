@@ -16,6 +16,7 @@ import (
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
 	orderriskdomain "github.com/dujiao-next/internal/modules/orderrisk/domain"
 	"github.com/dujiao-next/internal/persistence/gormutil"
+	"github.com/dujiao-next/internal/shared/money"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -547,6 +548,21 @@ func (r *Store) ListByUser(filter ordercontract.ListFilter) ([]orderdomain.Order
 		return nil, 0, err
 	}
 	return orders, total, nil
+}
+
+// NetPaidTotalByUser counts only root orders, whose refunded amount includes child refunds.
+func (r *Store) NetPaidTotalByUser(userID uint) (money.Amount, error) {
+	var total money.Amount
+	if userID == 0 {
+		return total, nil
+	}
+	err := r.db.Model(&orderdomain.Order{}).
+		Select("COALESCE(SUM(total_amount - refunded_amount), 0)").
+		Where("user_id = ? AND parent_id IS NULL AND paid_at IS NOT NULL AND deleted_at IS NULL", userID).
+		Where("status <> ?", constants.OrderStatusRefunded).
+		Where("total_amount > refunded_amount").
+		Row().Scan(&total)
+	return total, err
 }
 
 // StatsByUser 按状态聚合用户订单数量（忽略分页与状态筛选，复用关键词筛选）

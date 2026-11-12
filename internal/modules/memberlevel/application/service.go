@@ -4,6 +4,8 @@ import (
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
 	memberlevelcontract "github.com/dujiao-next/internal/modules/memberlevel/contract"
 	memberleveldomain "github.com/dujiao-next/internal/modules/memberlevel/domain"
+	ordercontract "github.com/dujiao-next/internal/modules/order/contract"
+	"github.com/dujiao-next/internal/shared/money"
 
 	"github.com/shopspring/decimal"
 )
@@ -13,6 +15,7 @@ type Service struct {
 	levelRepo memberlevelcontract.LevelRepository
 	priceRepo memberlevelcontract.PriceRepository
 	userRepo  memberlevelcontract.UserRepository
+	spending  ordercontract.MemberSpendReader
 }
 
 // NewService 创建会员等级服务
@@ -20,11 +23,13 @@ func NewService(
 	levelRepo memberlevelcontract.LevelRepository,
 	priceRepo memberlevelcontract.PriceRepository,
 	userRepo memberlevelcontract.UserRepository,
+	spending ordercontract.MemberSpendReader,
 ) *Service {
 	return &Service{
 		levelRepo: levelRepo,
 		priceRepo: priceRepo,
 		userRepo:  userRepo,
+		spending:  spending,
 	}
 }
 
@@ -212,7 +217,11 @@ func (s *Service) CheckAndUpgrade(userID uint) error {
 			return nil
 		}
 
-		target, err := s.findUpgradeTarget(user, levels)
+		netSpent, err := s.spending.NetPaidTotalByUser(userID)
+		if err != nil {
+			return err
+		}
+		target, err := s.findUpgradeTarget(user, levels, netSpent)
 		if err != nil || target == nil {
 			return err
 		}
@@ -227,7 +236,7 @@ func (s *Service) CheckAndUpgrade(userID uint) error {
 	return nil
 }
 
-func (s *Service) findUpgradeTarget(user *userdomain.User, levels []memberleveldomain.MemberLevel) (*memberleveldomain.MemberLevel, error) {
+func (s *Service) findUpgradeTarget(user *userdomain.User, levels []memberleveldomain.MemberLevel, netSpent money.Amount) (*memberleveldomain.MemberLevel, error) {
 	if user == nil {
 		return nil, nil
 	}
@@ -243,7 +252,7 @@ func (s *Service) findUpgradeTarget(user *userdomain.User, levels []memberleveld
 		if level.SortOrder <= currentSortOrder {
 			continue
 		}
-		if s.meetsThreshold(user, level) {
+		if s.meetsThreshold(user, level, netSpent) {
 			return level, nil
 		}
 	}
@@ -267,7 +276,7 @@ func (s *Service) resolveCurrentSortOrder(levelID uint, activeLevels []memberlev
 }
 
 // meetsThreshold 判断用户是否满足等级阈值（充值累计 OR 消费累计）
-func (s *Service) meetsThreshold(user *userdomain.User, level *memberleveldomain.MemberLevel) bool {
+func (s *Service) meetsThreshold(user *userdomain.User, level *memberleveldomain.MemberLevel, netSpent money.Amount) bool {
 	rechargeThreshold := level.RechargeThreshold.Decimal
 	spendThreshold := level.SpendThreshold.Decimal
 
@@ -276,7 +285,7 @@ func (s *Service) meetsThreshold(user *userdomain.User, level *memberleveldomain
 		return true
 	}
 	if spendThreshold.GreaterThan(decimal.Zero) &&
-		user.TotalSpent.Decimal.GreaterThanOrEqual(spendThreshold) {
+		netSpent.Decimal.GreaterThanOrEqual(spendThreshold) {
 		return true
 	}
 	return false
@@ -298,6 +307,7 @@ func (s *Service) OnOrderPaid(userID uint, amount decimal.Decimal) error {
 	if userID == 0 {
 		return nil
 	}
+	// Preserve the legacy gross counter for existing consumers. Upgrades use order net spending.
 	if err := s.userRepo.IncrementTotalSpent(userID, amount); err != nil {
 		return err
 	}

@@ -30,9 +30,11 @@ func New(c *container.Container) Handlers {
 	return Handlers{
 		Profile: userauthtransport.NewUserProfileHandler(
 			userProfileTransportAdapter{service: c.UserAuthService},
+			c.OrderStore,
 		),
 		Email: userauthtransport.NewUserEmailHandler(
 			userEmailTransportAdapter{service: c.UserAuthService},
+			c.OrderStore,
 		),
 		Password: userauthtransport.NewUserPasswordHandler(userPasswordTransportAdapter{
 			auth: c.UserAuthService, settings: c.SettingService,

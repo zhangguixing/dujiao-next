@@ -15,9 +15,15 @@ import (
 	"github.com/dujiao-next/internal/shared/money"
 )
 
+// MemberSpendReader reports a member's paid order total after refunds.
+type MemberSpendReader interface {
+	NetPaidTotalByUser(userID uint) (money.Amount, error)
+}
+
 // Store 是订单应用层所需的完整持久化端口。
 // 事务通过 WithinTransaction 暴露模块端口，不向应用层泄漏 ORM 连接。
 type Store interface {
+	MemberSpendReader
 	Create(order *orderdomain.Order, items []orderdomain.OrderItem) error
 	GetByID(id uint) (*orderdomain.Order, error)
 	GetByIDs(ids []uint) ([]orderdomain.Order, error)

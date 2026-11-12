@@ -5,11 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dujiao-next/internal/constants"
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
 	memberlevelapp "github.com/dujiao-next/internal/modules/memberlevel/application"
 	memberlevelcontract "github.com/dujiao-next/internal/modules/memberlevel/contract"
 	memberleveldomain "github.com/dujiao-next/internal/modules/memberlevel/domain"
 	"github.com/dujiao-next/internal/modules/memberlevel/infrastructure/gormstore"
+	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
+	orderstore "github.com/dujiao-next/internal/modules/order/infrastructure/gormstore"
 	"github.com/dujiao-next/internal/shared/jsonmap"
 	"github.com/dujiao-next/internal/shared/money"
 	"github.com/glebarez/sqlite"
@@ -25,14 +28,31 @@ func newMemberLevelServiceForTest(t *testing.T) (*memberlevelapp.Service, *gorm.
 	if err != nil {
 		t.Fatalf("open sqlite failed: %v", err)
 	}
-	if err := db.AutoMigrate(&userdomain.User{}, &memberleveldomain.MemberLevel{}, &memberleveldomain.MemberLevelPrice{}); err != nil {
+	if err := db.AutoMigrate(&userdomain.User{}, &memberleveldomain.MemberLevel{}, &memberleveldomain.MemberLevelPrice{}, &orderdomain.Order{}); err != nil {
 		t.Fatalf("auto migrate failed: %v", err)
 	}
 
 	levelRepo := gormstore.NewLevelStore(db)
 	priceRepo := gormstore.NewPriceStore(db)
 	userRepo := gormstore.NewUserStore(db)
-	return memberlevelapp.NewService(levelRepo, priceRepo, userRepo), db
+	return memberlevelapp.NewService(levelRepo, priceRepo, userRepo, orderstore.New(db, "member-level-test")), db
+}
+
+func createPaidOrderFixture(t *testing.T, db *gorm.DB, userID uint, orderNo, amount string) orderdomain.Order {
+	t.Helper()
+	paidAt := time.Now()
+	order := orderdomain.Order{
+		OrderNo:     orderNo,
+		UserID:      userID,
+		Status:      constants.OrderStatusPaid,
+		Currency:    "CNY",
+		PaidAt:      &paidAt,
+		TotalAmount: money.FromDecimal(decimal.RequireFromString(amount)),
+	}
+	if err := db.Create(&order).Error; err != nil {
+		t.Fatalf("create paid order: %v", err)
+	}
+	return order
 }
 
 func createMemberLevelFixture(
@@ -85,6 +105,7 @@ func TestMemberLevelServiceOnOrderPaidDoesNotMoveToEqualSortOrder(t *testing.T) 
 	defaultLevel := createMemberLevelFixture(t, db, "default", 0, "0", true)
 	_ = createMemberLevelFixture(t, db, "vip", 0, "0.01", false)
 	user := createUserFixture(t, db, "equal-sort@example.com", defaultLevel.ID)
+	createPaidOrderFixture(t, db, user.ID, "equal-sort", "0.01")
 
 	if err := svc.OnOrderPaid(user.ID, decimal.RequireFromString("0.01")); err != nil {
 		t.Fatalf("OnOrderPaid failed: %v", err)
@@ -107,6 +128,7 @@ func TestMemberLevelServiceOnOrderPaidKeepsHigherLevel(t *testing.T) {
 	highLevel := createMemberLevelFixture(t, db, "high", 100, "0", true)
 	_ = createMemberLevelFixture(t, db, "low", 10, "0.01", false)
 	user := createUserFixture(t, db, "no-downgrade@example.com", highLevel.ID)
+	createPaidOrderFixture(t, db, user.ID, "no-downgrade", "50.00")
 
 	if err := svc.OnOrderPaid(user.ID, decimal.RequireFromString("50")); err != nil {
 		t.Fatalf("OnOrderPaid failed: %v", err)
@@ -126,6 +148,7 @@ func TestMemberLevelServiceOnOrderPaidUpgradesToHigherSortOrder(t *testing.T) {
 	defaultLevel := createMemberLevelFixture(t, db, "default2", 0, "0", true)
 	goldLevel := createMemberLevelFixture(t, db, "gold", 20, "0.01", false)
 	user := createUserFixture(t, db, "higher-sort@example.com", defaultLevel.ID)
+	createPaidOrderFixture(t, db, user.ID, "higher-sort", "0.01")
 
 	if err := svc.OnOrderPaid(user.ID, decimal.RequireFromString("0.01")); err != nil {
 		t.Fatalf("OnOrderPaid failed: %v", err)
@@ -137,6 +160,58 @@ func TestMemberLevelServiceOnOrderPaidUpgradesToHigherSortOrder(t *testing.T) {
 	}
 	if updated.MemberLevelID != goldLevel.ID {
 		t.Fatalf("expected member_level_id=%d, got %d", goldLevel.ID, updated.MemberLevelID)
+	}
+}
+
+func TestMemberLevelUpgradeUsesNetPaidOrders(t *testing.T) {
+	svc, db := newMemberLevelServiceForTest(t)
+	defaultLevel := createMemberLevelFixture(t, db, "refund-default", 0, "0", true)
+	nextLevel := createMemberLevelFixture(t, db, "refund-next", 10, "75.00", false)
+	user := createUserFixture(t, db, "refund@example.com", defaultLevel.ID)
+	full := createPaidOrderFixture(t, db, user.ID, "full-refund", "100.00")
+	markedRefunded := createPaidOrderFixture(t, db, user.ID, "marked-refunded", "100.00")
+	partial := createPaidOrderFixture(t, db, user.ID, "partial-refund", "100.00")
+	child := createPaidOrderFixture(t, db, user.ID, "refunded-child", "40.00")
+	otherUser := createUserFixture(t, db, "other-customer@example.com", defaultLevel.ID)
+	createPaidOrderFixture(t, db, otherUser.ID, "other-customer-order", "100.00")
+	pending := createPaidOrderFixture(t, db, user.ID, "unpaid", "100.00")
+	deleted := createPaidOrderFixture(t, db, user.ID, "deleted", "100.00")
+
+	for _, fixture := range []struct {
+		id     uint
+		fields map[string]any
+	}{
+		{full.ID, map[string]any{"status": constants.OrderStatusRefunded, "refunded_amount": "100.00"}},
+		{markedRefunded.ID, map[string]any{"status": constants.OrderStatusRefunded}},
+		{partial.ID, map[string]any{"status": constants.OrderStatusPartiallyRefunded, "refunded_amount": "30.20"}},
+		{child.ID, map[string]any{"parent_id": partial.ID, "refunded_amount": "30.20"}},
+		{pending.ID, map[string]any{"status": constants.OrderStatusPendingPayment, "paid_at": nil}},
+		{deleted.ID, map[string]any{"deleted_at": time.Now()}},
+	} {
+		if err := db.Model(&orderdomain.Order{}).Where("id = ?", fixture.id).Updates(fixture.fields).Error; err != nil {
+			t.Fatalf("update order fixture: %v", err)
+		}
+	}
+	if err := db.Model(&userdomain.User{}).Where("id = ?", user.ID).Update("total_spent", "200.00").Error; err != nil {
+		t.Fatalf("set historical cumulative spend: %v", err)
+	}
+	spending := orderstore.New(db, "member-level-test")
+	if net, err := spending.NetPaidTotalByUser(user.ID); err != nil || net.String() != "69.80" {
+		t.Fatalf("expected net spending 69.80, got %s, %v", net, err)
+	}
+	if err := svc.CheckAndUpgrade(user.ID); err != nil {
+		t.Fatalf("check historical spending: %v", err)
+	}
+	if err := db.First(&user, user.ID).Error; err != nil || user.MemberLevelID != defaultLevel.ID {
+		t.Fatalf("expected refunded spending to leave user at level %d, got %d, %v", defaultLevel.ID, user.MemberLevelID, err)
+	}
+
+	createPaidOrderFixture(t, db, user.ID, "reaches-net-threshold", "5.20")
+	if err := svc.OnOrderPaid(user.ID, decimal.RequireFromString("5.20")); err != nil {
+		t.Fatalf("check spending after payment: %v", err)
+	}
+	if err := db.First(&user, user.ID).Error; err != nil || user.MemberLevelID != nextLevel.ID {
+		t.Fatalf("expected upgrade at exactly 75.00 net to level %d, got %d, %v", nextLevel.ID, user.MemberLevelID, err)
 	}
 }
 
@@ -183,6 +258,7 @@ func TestMemberLevelServiceOnOrderPaidDoesNotOverwriteConcurrentHigherLevel(t *t
 	goldLevel := createMemberLevelFixture(t, db, "race-gold", 20, "1.00", false)
 	highLevel := createMemberLevelFixture(t, db, "race-high", 100, "1000.00", false)
 	user := createUserFixture(t, db, "race-no-downgrade@example.com", defaultLevel.ID)
+	createPaidOrderFixture(t, db, user.ID, "race-no-downgrade", "1.00")
 
 	baseUserRepo := gormstore.NewUserStore(db)
 	raceRepo := &concurrentUserRepository{
@@ -197,6 +273,7 @@ func TestMemberLevelServiceOnOrderPaidDoesNotOverwriteConcurrentHigherLevel(t *t
 		gormstore.NewLevelStore(db),
 		gormstore.NewPriceStore(db),
 		raceRepo,
+		orderstore.New(db, "member-level-test"),
 	)
 
 	if err := svc.OnOrderPaid(user.ID, decimal.RequireFromString("1.00")); err != nil {
