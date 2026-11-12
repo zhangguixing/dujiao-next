@@ -304,6 +304,7 @@
       "nextLevel": "下一等級",
       "rechargeProgress": "累計充值",
       "spendProgress": "累計消費",
+      "spendRemaining": "再消費 {amount} 即可升級",
       "highestLevel": "已達最高等級",
       "defaultLevel": "普通會員",
       "noDiscount": "無折扣"

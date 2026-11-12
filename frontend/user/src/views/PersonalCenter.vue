@@ -163,18 +163,38 @@
                     </div>
                     <div class="min-w-0">
                       <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{{ t('personalCenter.memberLevel.nextLevel') }}</p>
-                      <div class="mt-0.5 flex items-center gap-2">
-                        <span class="truncate text-sm font-bold text-muted-foreground">{{ levelName(userProfileStore.nextLevel) }}</span>
-                        <span v-if="userProfileStore.nextLevel.discount_rate < 100" class="shrink-0 text-xs font-medium text-primary">
-                          {{ t('personalCenter.memberLevel.discountOff', { n: userProfileStore.nextLevel.discount_rate / 10 }) }}
-                        </span>
-                      </div>
+                      <p class="mt-0.5 truncate text-sm font-bold text-foreground">{{ levelName(userProfileStore.nextLevel) }}</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- Progress bars -->
                 <div v-if="userProfileStore.upgradeProgress" class="mt-3.5 space-y-3">
+                  <div v-if="userProfileStore.upgradeProgress.spendPercent !== null">
+                    <div class="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs">
+                      <span class="font-medium text-muted-foreground">{{ t('personalCenter.memberLevel.spendProgress') }}</span>
+                      <span class="tabular-nums text-muted-foreground">
+                        <strong class="font-semibold text-foreground">{{ userProfileStore.upgradeProgress.spent.toFixed(2) }}</strong>
+                        <span class="mx-0.5 opacity-60">/</span>
+                        {{ userProfileStore.upgradeProgress.spendThreshold.toFixed(2) }}
+                      </span>
+                    </div>
+                    <div
+                      class="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                      role="progressbar"
+                      :aria-label="t('personalCenter.memberLevel.spendProgress')"
+                      :aria-valuemax="userProfileStore.upgradeProgress.spendThreshold"
+                      :aria-valuenow="Math.min(userProfileStore.upgradeProgress.spent, userProfileStore.upgradeProgress.spendThreshold)"
+                    >
+                      <div
+                        class="h-full rounded-full bg-[var(--ui-accent)]"
+                        :style="{ width: userProfileStore.upgradeProgress.spendPercent + '%' }"
+                      ></div>
+                    </div>
+                    <p v-if="userProfileStore.upgradeProgress.spendRemaining > 0" class="mt-2 text-xs text-muted-foreground">
+                      {{ t('personalCenter.memberLevel.spendRemaining', { amount: userProfileStore.upgradeProgress.spendRemaining.toFixed(2) }) }}
+                    </p>
+                  </div>
                   <div v-if="userProfileStore.upgradeProgress.rechargePercent !== null">
                     <div class="mb-1.5 flex items-center justify-between">
                       <span class="text-xs font-medium text-muted-foreground">{{ t('personalCenter.memberLevel.rechargeProgress') }}</span>
@@ -188,22 +208,6 @@
                       <div
                         class="absolute inset-y-0 left-0 rounded-full bg-[var(--ui-accent)] transition-all duration-700 ease-out"
                         :style="{ width: userProfileStore.upgradeProgress.rechargePercent + '%' }"
-                      ></div>
-                    </div>
-                  </div>
-                  <div v-if="userProfileStore.upgradeProgress.spendPercent !== null">
-                    <div class="mb-1.5 flex items-center justify-between">
-                      <span class="text-xs font-medium text-muted-foreground">{{ t('personalCenter.memberLevel.spendProgress') }}</span>
-                      <span class="text-xs tabular-nums text-muted-foreground">
-                        {{ userProfileStore.upgradeProgress.spent.toFixed(2) }}
-                        <span class="mx-0.5 opacity-40">/</span>
-                        {{ userProfileStore.upgradeProgress.spendThreshold.toFixed(2) }}
-                      </span>
-                    </div>
-                    <div class="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        class="absolute inset-y-0 left-0 rounded-full bg-[var(--ui-accent)] transition-all duration-700 ease-out"
-                        :style="{ width: userProfileStore.upgradeProgress.spendPercent + '%' }"
                       ></div>
                     </div>
                   </div>

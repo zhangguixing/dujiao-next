@@ -84,9 +84,9 @@ export const useUserProfileStore = defineStore('user-profile', () => {
 
     const upgradeProgress = computed(() => {
         const next = nextLevel.value
-        if (!next) return null
-        const recharged = Number(profile.value?.total_recharged || 0)
-        const spent = Number(profile.value?.total_spent || 0)
+        if (!next || !profile.value) return null
+        const recharged = Number(profile.value.total_recharged || 0)
+        const spent = Number(profile.value.total_spent || 0)
         const rechargeThreshold = next.recharge_threshold
         const spendThreshold = next.spend_threshold
         return {
@@ -96,6 +96,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
             spent,
             rechargeThreshold,
             spendThreshold,
+            spendRemaining: Math.max(0, spendThreshold - spent),
         }
     })
 

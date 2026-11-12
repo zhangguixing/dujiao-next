@@ -304,6 +304,7 @@
       "nextLevel": "Next Level",
       "rechargeProgress": "Total Recharged",
       "spendProgress": "Total Spent",
+      "spendRemaining": "Spend {amount} more to reach the next level",
       "highestLevel": "Highest level reached",
       "defaultLevel": "Regular Member",
       "noDiscount": "No discount"

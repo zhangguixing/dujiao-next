@@ -256,6 +256,7 @@
       "nextLevel": "下一等级",
       "rechargeProgress": "累计充值",
       "spendProgress": "累计消费",
+      "spendRemaining": "再消费 {amount} 即可升级",
       "highestLevel": "已达最高等级",
       "defaultLevel": "普通会员",
       "noDiscount": "无折扣"
