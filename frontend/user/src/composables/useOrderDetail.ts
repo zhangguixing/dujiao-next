@@ -6,6 +6,7 @@ import { debounceAsync } from '../utils/debounce'
 import { useConfirmDialog } from './useConfirmDialog'
 import { toast } from './useToast'
 import { useOrderDisplayHelpers } from './useOrderDisplayHelpers'
+import { useOrderDetailPolling } from './useOrderDetailPolling'
 
 /**
  * 已登录用户订单详情逻辑（classic + vault 共用）。
@@ -21,6 +22,14 @@ export function useOrderDetail() {
   const fulfillmentDownloading = ref(false)
 
   const helpers = useOrderDisplayHelpers(order)
+  const orderNo = () => String(route.params.order_no || '').trim()
+  const fetchOrder = (silentBusinessError = false) => userOrderAPI.detail(orderNo(), { silentBusinessError })
+
+  useOrderDetailPolling(
+    order,
+    () => !loading.value && route.name === 'order-detail' && order.value?.order_no === orderNo(),
+    () => fetchOrder(true),
+  )
 
   const handleDownloadFulfillment = async (orderNo: string) => {
     if (fulfillmentDownloading.value) return
@@ -42,7 +51,7 @@ export function useOrderDetail() {
   const loadOrder = async () => {
     loading.value = true
     try {
-      const response = await userOrderAPI.detail(String(route.params.order_no || '').trim())
+      const response = await fetchOrder()
       order.value = response.data.data
     } catch (error) {
       order.value = null

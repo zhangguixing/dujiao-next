@@ -6,6 +6,7 @@ import { debounceAsync } from '../utils/debounce'
 import { clearGuestOrderAuth, loadGuestOrderAuth, saveGuestOrderAuth } from '../utils/guestOrderAuth'
 import { resolveGuestOrderDetailViewState } from '../utils/guestOrderDetailState'
 import { useOrderDisplayHelpers } from './useOrderDisplayHelpers'
+import { useOrderDetailPolling } from './useOrderDetailPolling'
 
 /**
  * 游客订单详情逻辑（classic + vault 共用）。
@@ -51,6 +52,18 @@ export function useGuestOrderDetail() {
   }
 
   const hasAuth = computed(() => Boolean(auth.value.email && auth.value.order_password))
+  const orderNo = () => String(route.params.order_no || '').trim()
+  const fetchOrder = (silentBusinessError = false) => guestOrderAPI.detail(orderNo(), {
+    email: auth.value.email,
+    order_password: auth.value.order_password,
+  }, { silentBusinessError })
+
+  useOrderDetailPolling(
+    order,
+    () => !loading.value && hasAuth.value && route.name === 'guest-order-detail' && order.value?.order_no === orderNo(),
+    () => fetchOrder(true),
+  )
+
   const showAuthForm = computed(() => !hasAuth.value || authError.value !== '')
   const viewState = computed(() => resolveGuestOrderDetailViewState({
     loading: loading.value,
@@ -66,10 +79,7 @@ export function useGuestOrderDetail() {
         authError.value = t('guestOrderDetail.authRequired')
         return
       }
-      const response = await guestOrderAPI.detail(String(route.params.order_no || '').trim(), {
-        email: auth.value.email,
-        order_password: auth.value.order_password,
-      })
+      const response = await fetchOrder()
       order.value = response.data.data
       authError.value = ''
     } catch (error) {
