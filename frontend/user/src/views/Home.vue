@@ -1,63 +1,69 @@
 <template>
   <div class="home-page min-h-screen bg-background text-foreground">
 
-    <!-- ==================== LIST MODE ==================== -->
-    <template v-if="templateMode === 'list'">
-      <!-- Hero Banner (shared with card mode) -->
-      <section v-if="showHeroSection" class="relative z-10 pt-24 sm:pt-28">
-        <div class="storefront-container">
-          <div class="home-hero storefront-surface relative overflow-hidden" :class="{ 'home-hero--image': heroImage }"
-            @touchstart="onBannerTouchStart"
-            @touchend="onBannerTouchEnd">
-            <Transition name="banner-fade" mode="out-in">
-              <img v-if="!bannerLoading && heroImage" :src="heroImage" :key="heroImage" alt="" class="absolute inset-0 h-full w-full object-cover" />
-            </Transition>
-            <div v-if="heroImage" class="home-hero-scrim absolute inset-0" aria-hidden="true"></div>
-            <div v-if="bannerLoading" class="relative flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[240px] sm:p-6 md:min-h-[320px] md:p-10">
-              <div class="space-y-3">
-                <div class="h-5 w-24 theme-skeleton rounded-full" style="background: rgba(255,255,255,0.35)"></div>
-                <div class="h-8 max-w-3xl theme-skeleton rounded-xl md:h-10" style="background: rgba(255,255,255,0.35)"></div>
-                <div class="h-4 max-w-2xl theme-skeleton rounded-lg" style="background: rgba(255,255,255,0.3)"></div>
-              </div>
-            </div>
-            <div v-else class="home-hero-content relative flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[240px] sm:p-6 md:min-h-[320px] md:p-10">
-              <div v-if="bannerCount > 1" class="mb-3 flex items-center justify-end gap-2">
-                <button type="button"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-black/20 text-white transition hover:bg-black/35 md:h-9 md:w-9"
-                  @click="handlePrevHeroBanner" :aria-label="t('common.previousBanner')">
-                  <ChevronLeft class="h-3.5 w-3.5" />
-                </button>
-                <button type="button"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-black/20 text-white transition hover:bg-black/35 md:h-9 md:w-9"
-                  @click="handleNextHeroBanner" :aria-label="t('common.nextBanner')">
-                  <ChevronRight class="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div class="space-y-2 sm:space-y-3">
-                <span v-if="heroBadge !== heroTitle" :class="heroBadgeClass">
-                  <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-                  {{ heroBadge }}
-                </span>
-                <h1 class="max-w-4xl text-xl font-semibold tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
-                  {{ heroTitle }}
-                </h1>
-                <p class="max-w-3xl text-xs leading-relaxed opacity-90 sm:text-sm">
-                  {{ heroSubtitle }}
-                </p>
-              </div>
-              <div v-if="bannerCount > 1" class="mt-4 flex items-center gap-2">
-                <button v-for="(_, bIdx) in banners" :key="`list-dot-${bIdx}`" type="button"
-                  class="h-2 rounded-full transition-all"
-                  :class="bIdx === currentBannerIndex ? 'w-6 bg-white' : 'w-2 bg-white/45 hover:bg-white/70'"
-                  @click="selectHeroBanner(bIdx)"></button>
-              </div>
-            </div>
+    <section v-if="displayHero" class="home-opening storefront-container pt-24 sm:pt-28">
+      <div
+        class="home-hero"
+        :class="{ 'home-hero--image': heroImage }"
+        @touchstart.passive="onBannerTouchStart"
+        @touchend.passive="onBannerTouchEnd"
+      >
+        <div class="home-hero-light" aria-hidden="true">
+          <span class="home-orbit"></span>
+        </div>
+        <Transition name="banner-fade">
+          <img v-if="heroImage" :key="heroImage" :src="heroImage" alt="" class="home-banner-image" />
+        </Transition>
+        <div v-if="heroImage" class="home-hero-scrim" aria-hidden="true"></div>
+
+        <div v-if="bannerLoading" class="home-hero-content" :aria-label="t('common.loading')" aria-busy="true">
+          <div class="home-hero-skeleton h-12 w-2/3 max-w-md rounded-lg"></div>
+          <div class="home-hero-skeleton mt-5 h-5 w-1/2 max-w-sm rounded-lg"></div>
+          <div class="home-hero-skeleton mt-8 h-11 w-32 rounded-lg"></div>
+        </div>
+        <div v-else class="home-hero-content">
+          <h1 class="home-hero-title">{{ displayHeroTitle }}</h1>
+          <p class="home-hero-subtitle">{{ heroSubtitle }}</p>
+          <div class="mt-7 flex flex-wrap items-center gap-3">
+            <a v-if="!hasHeroLink && templateMode === 'list'" href="#home-catalog" class="home-hero-primary">
+              {{ heroPrimaryButtonText }}
+              <ArrowRight class="size-4" aria-hidden="true" />
+            </a>
+            <router-link v-else-if="!hasHeroLink" to="/products" class="home-hero-primary">
+              {{ heroPrimaryButtonText }}
+              <ArrowRight class="size-4" aria-hidden="true" />
+            </router-link>
+            <button v-else type="button" class="home-hero-primary" @click="goToHeroLink">
+              {{ heroPrimaryButtonText }}
+              <ArrowRight class="size-4" aria-hidden="true" />
+            </button>
           </div>
         </div>
-      </section>
 
+        <div v-if="bannerCount > 1" class="home-banner-controls">
+          <button type="button" :aria-label="t('common.previousBanner')" @click="handlePrevHeroBanner">
+            <ChevronLeft class="size-4" aria-hidden="true" />
+          </button>
+          <button
+            v-for="(_, index) in banners"
+            :key="index"
+            type="button"
+            class="home-banner-step"
+            :aria-current="index === currentBannerIndex ? 'true' : undefined"
+            :aria-label="t('common.switchBanner', { n: index + 1 })"
+            @click="selectHeroBanner(index)"
+          ></button>
+          <button type="button" :aria-label="t('common.nextBanner')" @click="handleNextHeroBanner">
+            <ChevronRight class="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== LIST MODE ==================== -->
+    <template v-if="templateMode === 'list'">
       <!-- Main: Left Categories + Right Product List -->
-      <section class="relative z-10 pb-6" :class="showHeroSection ? 'pt-6' : 'pt-24'">
+      <section id="home-catalog" class="home-catalog relative z-10 pb-6" :class="displayHero ? 'pt-6' : 'pt-24'">
         <div class="storefront-container">
           <div class="flex flex-col lg:flex-row gap-6">
 
@@ -73,7 +79,7 @@
             />
 
             <!-- Right: Product List -->
-            <main class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0">
               <!-- Search Bar -->
               <div class="relative mb-4">
                 <div class="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
@@ -82,7 +88,8 @@
                 <input
                   v-model="listSearchQuery"
                   type="text"
-                  class="w-full h-10 pl-10 pr-10 rounded-xl border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground transition-shadow"
+                  class="w-full h-11 pl-10 pr-10 rounded-xl border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground transition-shadow"
+                  :aria-label="t('products.searchLabel')"
                   :placeholder="t('products.searchBoxPlaceholder')"
                   @keydown.enter="listOnSearch"
                 />
@@ -90,6 +97,7 @@
                   v-if="listSearchQuery"
                   type="button"
                   class="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                  :aria-label="t('products.clearSearch')"
                   @click="listClearSearch"
                 >
                   <X class="w-4 h-4" />
@@ -155,7 +163,7 @@
 
               <!-- Empty State -->
               <EmptyState v-else variant="soft" icon="package" :title="t('products.empty')" />
-            </main>
+            </div>
           </div>
         </div>
       </section>
@@ -163,113 +171,16 @@
 
     <!-- ==================== CARD MODE (default) ==================== -->
     <template v-else>
-    <section v-if="showHeroSection" class="relative z-10 pt-24 sm:pt-28">
+    <section id="featured" class="home-catalog relative z-10 pb-14" :class="displayHero ? 'pt-8 sm:pt-12' : 'pt-24 sm:pt-28'">
       <div class="storefront-container">
-        <div class="home-hero storefront-surface relative overflow-hidden" :class="{ 'home-hero--image': heroImage }"
-          @touchstart="onBannerTouchStart"
-          @touchend="onBannerTouchEnd">
-          <!-- Banner image with fade transition -->
-          <Transition name="banner-fade" mode="out-in">
-            <img v-if="!bannerLoading && heroImage" :src="heroImage" :key="heroImage" alt="" class="absolute inset-0 h-full w-full object-cover" />
-          </Transition>
-          <div v-if="heroImage" class="home-hero-scrim absolute inset-0" aria-hidden="true"></div>
-
-            <div v-if="bannerLoading" class="relative flex min-h-[260px] flex-col justify-between p-5 sm:min-h-[300px] sm:p-7 md:min-h-[340px] md:p-10">
-            <div class="mb-4 flex items-center justify-end">
-              <span :class="heroBadgeClass">
-                {{ t('common.loading') }}
-              </span>
-            </div>
-
-            <div class="space-y-4">
-              <div class="h-6 w-28 theme-skeleton rounded-full" style="background: rgba(255,255,255,0.35)"></div>
-              <div class="h-10 max-w-4xl theme-skeleton rounded-xl md:h-14" style="background: rgba(255,255,255,0.35)"></div>
-              <div class="h-5 max-w-3xl theme-skeleton rounded-lg" style="background: rgba(255,255,255,0.3)"></div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3 pt-6">
-              <div class="h-11 w-36 theme-skeleton rounded-lg" style="background: rgba(255,255,255,0.35)"></div>
-              <div class="h-11 w-28 theme-skeleton rounded-lg" style="background: rgba(255,255,255,0.25)"></div>
-            </div>
-          </div>
-
-          <div v-else class="home-hero-content relative flex min-h-[260px] flex-col justify-between p-5 sm:min-h-[300px] sm:p-7 md:min-h-[340px] md:p-10">
-            <div v-if="bannerCount > 1" class="mb-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/20 text-white transition hover:bg-black/35 md:h-10 md:w-10"
-                @click="handlePrevHeroBanner"
-                :aria-label="t('common.previousBanner')"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/20 text-white transition hover:bg-black/35 md:h-10 md:w-10"
-                @click="handleNextHeroBanner"
-                :aria-label="t('common.nextBanner')"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
-            </div>
-
-            <div class="space-y-3 sm:space-y-4">
-              <span v-if="heroBadge !== heroTitle" :class="heroBadgeClass">
-                <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-                {{ heroBadge }}
-              </span>
-              <h1 class="max-w-4xl text-2xl font-semibold tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-3xl md:text-[2.85rem]">
-                {{ heroTitle }}
-              </h1>
-              <p class="max-w-3xl text-xs leading-relaxed opacity-90 sm:text-sm md:text-base">
-                {{ heroSubtitle }}
-              </p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3 pt-5 sm:pt-6">
-              <button
-                type="button"
-                @click="goToHeroLink"
-                class="home-hero-primary inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-semibold sm:px-5"
-              >
-                {{ heroPrimaryButtonText }}
-                <ArrowRight class="h-4 w-4" />
-              </button>
-              <a
-                v-if="!hasHeroLink"
-                href="#featured"
-                class="home-hero-secondary inline-flex min-h-11 items-center whitespace-nowrap rounded-lg border px-4 py-2.5 text-sm font-medium sm:px-5"
-              >
-                {{ t('home.featured.title') }}
-              </a>
-            </div>
-
-            <div v-if="bannerCount > 1" class="mt-5 flex items-center gap-2">
-              <button
-                v-for="(_, index) in banners"
-                :key="`hero-dot-${index}`"
-                type="button"
-                class="h-2.5 rounded-full transition-all"
-                :class="index === currentBannerIndex ? 'w-7 bg-white' : 'w-2.5 bg-white/45 hover:bg-white/70'"
-                @click="selectHeroBanner(index)"
-                :aria-label="t('common.switchBanner', { n: index + 1 })"
-              ></button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="featured" class="relative z-10 scroll-mt-16 pb-14" :class="showHeroSection ? 'pt-8 sm:pt-12' : 'pt-24 sm:pt-28'">
-      <div class="storefront-container">
-        <div class="storefront-page-heading flex flex-wrap items-end justify-between gap-3">
+        <div class="home-catalog-heading storefront-page-heading flex flex-wrap items-end justify-between gap-3">
           <div>
-            <component :is="showHeroSection ? 'h2' : 'h1'" class="storefront-page-title">{{ t('home.featured.title') }}</component>
+            <component :is="displayHero ? 'h2' : 'h1'" class="storefront-page-title">{{ t('home.featured.title') }}</component>
             <p class="storefront-page-subtitle">{{ t('home.featured.description') }}</p>
           </div>
           <router-link
             to="/products"
-            class="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg text-sm font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+            class="home-catalog-link inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-primary focus-visible:outline-2 focus-visible:outline-primary"
           >
             {{ t('home.featured.viewAll') }}
             <ArrowRight class="size-4" aria-hidden="true" />
@@ -297,11 +208,12 @@
             :product="product"
             :index="idx"
             :animation-step="60"
+            class="home-product"
             @click="goToProduct"
             @quick-buy="openQuickBuy"
           />
         </div>
-        <div v-else class="rounded-2xl border border-dashed py-16 text-center text-muted-foreground theme-slide-up">
+        <div v-else class="home-empty rounded-2xl border py-16 text-center text-muted-foreground theme-slide-up">
           <PackageOpen class="mx-auto h-16 w-16 mb-4 text-muted-foreground opacity-50" :stroke-width="1.5" />
           {{ t('home.featured.empty') }}
         </div>
@@ -328,13 +240,15 @@
           <article
             v-for="post in posts"
             :key="post.id"
-            class="cursor-pointer rounded-xl border bg-card p-5 shadow-sm transition hover:shadow-md"
-            @click="goToPost(post.slug)"
+            class="home-post rounded-xl border bg-card p-5"
           >
             <div class="mb-2 text-xs text-muted-foreground">{{ formatDate(post.published_at) }}</div>
             <h3 class="line-clamp-2 text-base font-semibold">{{ getLocalizedText(post.title) }}</h3>
             <p class="mt-2 line-clamp-2 text-sm text-muted-foreground">{{ getLocalizedText(post.summary) }}</p>
-            <div class="mt-4 text-sm font-medium text-primary">{{ t('blog.readMore') }}</div>
+            <router-link :to="`/blog/${post.slug}`" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary after:absolute after:inset-0 hover:underline focus-visible:outline-2 focus-visible:outline-primary">
+              {{ t('blog.readMore') }}
+              <ArrowRight class="size-4" aria-hidden="true" />
+            </router-link>
           </article>
         </div>
         <div v-else class="rounded-2xl border border-dashed py-12 text-center text-muted-foreground">
@@ -362,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowRight, ChevronLeft, ChevronRight, PackageOpen, Search, X } from 'lucide-vue-next'
@@ -382,15 +296,14 @@ import PaginationNav from '../components/PaginationNav.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { Button } from '@/components/ui/button'
 import AnnouncementModal from '../components/AnnouncementModal.vue'
+import { recordHomeVisit } from '../utils/homeVisit'
 import { useAnnouncement, type HomeAnnouncement } from '../composables/useAnnouncement'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const { getLocalizedText } = useLocalized()
 const appStore = useAppStore()
-
-// 英雄横幅上的玻璃态徽章(白字深底,跟随图片而非主题)
-const heroBadgeClass = 'inline-flex items-center gap-2 rounded-md border border-white/25 bg-black/55 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-sm'
 
 const templateMode = computed(() => appStore.config?.template_mode || 'card')
 const navBuiltin = computed(() => (appStore.config?.nav_config as { builtin?: Record<string, boolean> } | undefined)?.builtin)
@@ -423,7 +336,6 @@ const {
   bannerCount,
   showHeroSection,
   heroImage,
-  heroBadge,
   heroTitle,
   heroSubtitle,
   hasHeroLink,
@@ -437,6 +349,13 @@ const {
   onBannerTouchEnd,
   stopHeroAutoPlay,
 } = useBannerCarousel()
+
+const isHome = computed(() => route.name === 'home')
+const displayHero = computed(() => isHome.value || showHeroSection.value)
+const displayHeroTitle = computed(() => {
+  if (bannerCount.value) return heroTitle.value
+  return String(appStore.config?.brand?.site_name || '').trim() || heroTitle.value
+})
 
 // ==================== List Mode ====================
 const {
@@ -462,7 +381,6 @@ const {
 const listProductGroups = useProductListGroups(listProducts, listCategoryMap)
 
 // ==================== SEO ====================
-const route = useRoute()
 const seoCategoryName = computed(() => {
   if (!listSelectedCategory.value) return ''
   const cat = listCategoryMap.value.get(listSelectedCategory.value)
@@ -487,10 +405,6 @@ const formatDate = (dateString: string) => {
 
 const goToProduct = (slug: string) => {
   router.push(`/products/${slug}`)
-}
-
-const goToPost = (slug: string) => {
-  router.push(`/blog/${slug}`)
 }
 
 const loadFeaturedProducts = async () => {
@@ -529,6 +443,10 @@ const showAnnouncementIfNeeded = () => {
   }
 }
 
+watch(isHome, (home) => {
+  if (home) void recordHomeVisit()
+}, { immediate: true })
+
 onMounted(async () => {
   await appStore.loadConfig()
   if (templateMode.value === 'list') {
@@ -546,34 +464,263 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.home-page {
+  background: radial-gradient(ellipse 55rem 30rem at 76% 10rem, var(--ui-accent-soft), transparent),
+    var(--ui-bg-page);
+}
+
 .home-hero {
-  background: color-mix(in oklab, var(--ui-bg-elevated) 84%, var(--ui-accent-soft));
-  color: var(--ui-text-primary);
+  --hero-ink: #f5f8ff;
+  --hero-muted: #c7d7f2;
+  --hero-surface: #0a1530;
+  --hero-spectrum: #77ebff, #7174ff, #d98afe, #ffac8f, #8cf1dc, #77ebff;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-content: center;
+  min-height: clamp(18rem, 32vw, 26rem);
+  overflow: hidden;
+  border: 1px solid #839eff52;
+  border-radius: clamp(1rem, 2.6vw, 2rem);
+  background: var(--hero-surface);
+  color: var(--hero-ink);
+  box-shadow: 0 20px 48px -30px #365be995;
 }
-.home-hero--image { color: var(--ui-text-on-accent); }
-.home-hero:not(.home-hero--image) .home-hero-content { min-height: 0; }
+
+.home-hero-light,
+.home-banner-image,
 .home-hero-scrim {
-  background: linear-gradient(90deg, rgb(10 16 25 / 0.88), rgb(10 16 25 / 0.64) 70%, rgb(10 16 25 / 0.38));
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
 }
+
+.home-hero-light {
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 80% 62%, #422a8f 0%, transparent 49%),
+    radial-gradient(ellipse at 95% 0%, #155385 0%, transparent 50%);
+}
+
+.home-orbit {
+  position: absolute;
+  top: 50%;
+  left: 75%;
+  width: clamp(21rem, 40vw, 38rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-26deg) scaleY(.54);
+  box-shadow: 0 0 36px #7d8fff80, inset 0 0 32px #697dff61;
+}
+
+.home-orbit::before,
+.home-orbit::after {
+  position: absolute;
+  border-radius: inherit;
+  content: '';
+}
+
+.home-orbit::before {
+  inset: -3px;
+  padding: 5px;
+  background: conic-gradient(from 34deg, var(--hero-spectrum));
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: home-spectrum 4.8s cubic-bezier(.24, .62, .38, 1) both;
+}
+
+.home-orbit::after {
+  inset: 7%;
+  border: 1px solid #b4c4ff50;
+}
+
+.home-hero--image .home-orbit {
+  display: none;
+}
+
+.home-hero--image::after {
+  position: absolute;
+  z-index: 3;
+  inset: auto 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--hero-spectrum));
+  box-shadow: 0 0 12px #8bb4ff;
+  pointer-events: none;
+  content: '';
+  animation: home-banner-spectrum 1.2s var(--ui-ease-out) both;
+}
+
+.home-banner-image {
+  object-fit: cover;
+}
+
+.home-hero-scrim {
+  background: linear-gradient(90deg, #071021f2 0%, #0a152ce6 32%, #0b16399c 68%, #0b16393d);
+}
+
+.home-hero-content {
+  position: relative;
+  padding: clamp(2rem, 5.8vw, 5rem);
+}
+
+.home-hero-title {
+  max-width: 14ch;
+  font-size: clamp(2.25rem, 6vw, 5rem);
+  font-weight: 760;
+  line-height: 1.05;
+  letter-spacing: -.046em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.home-hero-subtitle {
+  max-width: 36ch;
+  margin-top: clamp(.8rem, 2vw, 1.25rem);
+  color: var(--hero-muted);
+  font-size: clamp(1rem, 1.55vw, 1.25rem);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.home-hero-skeleton {
+  background: #b3c9f52e;
+}
+
 .home-hero-primary {
-  background: var(--ui-accent);
-  color: var(--ui-text-on-accent);
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .625rem 1rem;
+  border-radius: var(--ui-radius-sm);
+  background: #c8f5ff;
+  color: #0a2541;
+  font-size: .95rem;
+  font-weight: 700;
+  transition: background-color .24s var(--ui-ease-out), scale .24s var(--ui-ease-out);
 }
-.home-hero-primary:hover { background: var(--ui-accent-hover); }
-.home-hero-secondary { border-color: var(--ui-border-strong); }
-.home-hero-secondary:hover { background: var(--ui-bg-soft); }
-.home-hero--image .home-hero-secondary { border-color: currentColor; }
-.home-hero--image .home-hero-secondary:hover { background: rgb(10 16 25 / 0.35); }
+
+.home-hero-primary:hover { background: #edfcff; }
+.home-hero-primary:active { scale: .97; }
+
+.home-banner-controls {
+  position: relative;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  max-width: calc(100% - 2.5rem);
+  margin: -1rem clamp(2rem, 5.8vw, 5rem) clamp(1rem, 3vw, 2rem);
+  border-radius: var(--ui-radius-sm);
+  background: #091531df;
+}
+
+.home-banner-controls button {
+  display: grid;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  place-items: center;
+  border-radius: var(--ui-radius-sm);
+  transition: background-color .24s var(--ui-ease-out);
+}
+
+.home-banner-controls button:hover { background: #9eb9ff26; }
+
+.home-banner-controls .home-banner-step {
+  width: 2.75rem;
+  min-width: 0;
+}
+
+.home-banner-step::before {
+  width: .4rem;
+  height: .4rem;
+  border-radius: 99px;
+  background: #a4b5db;
+  content: '';
+  transition: transform .24s var(--ui-ease-out), background-color .24s var(--ui-ease-out);
+}
+
+.home-banner-step[aria-current='true']::before {
+  background: #98efff;
+  transform: scaleX(2.5);
+}
+
 .home-hero :is(a, button):focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid #ecf7ff;
   outline-offset: 3px;
 }
+
+.home-catalog {
+  scroll-margin-top: 5.5rem;
+}
+
+.home-catalog-heading { border: 0; padding-bottom: 0; }
+
+.home-catalog :deep(.theme-price-sm) { font-family: inherit; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .home-product {
+    transition: translate .25s var(--ui-ease-out), border-color .25s var(--ui-ease-out), box-shadow .25s var(--ui-ease-out);
+  }
+  .home-product:hover { translate: 0 -3px; }
+}
+
+.home-catalog-link,
+.home-post {
+  transition: background-color .24s var(--ui-ease-out), border-color .24s var(--ui-ease-out);
+}
+
+.home-catalog-link:hover { background: var(--ui-accent-soft); }
+
+.home-post { position: relative; }
+
+.home-post:is(:hover, :focus-within) {
+  border-color: var(--ui-accent);
+}
+
+.home-empty {
+  background: var(--ui-bg-elevated);
+}
+
 .banner-fade-enter-active,
 .banner-fade-leave-active {
-  transition: opacity 300ms ease;
+  transition: opacity .4s var(--ui-ease-out);
 }
+
+.banner-fade-enter-active { z-index: 1; }
+.home-hero-scrim { z-index: 2; }
+.home-hero-content,
+.home-banner-controls { z-index: 3; }
 .banner-fade-enter-from,
-.banner-fade-leave-to {
-  opacity: 0;
+.banner-fade-leave-to { opacity: 0; }
+
+@keyframes home-spectrum {
+  from { transform: rotate(-110deg); }
+  to { transform: rotate(0); }
+}
+
+@keyframes home-banner-spectrum {
+  from { transform: translateX(-45%); opacity: .2; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 47.99rem) {
+  .home-hero-light { opacity: .53; }
+  .home-orbit { top: 28%; left: 97%; }
+  .home-hero-content { padding-inline: 1.25rem; }
+  .home-banner-controls { margin-inline: 1.25rem; }
+  .home-hero-scrim { background: linear-gradient(90deg, #071021f2, #0b1639b8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-orbit::before,
+  .home-hero--image::after { animation: none; }
+  .home-hero-primary:active { scale: 1; }
+  .home-hero :is(a, button),
+  .home-banner-step::before,
+  .banner-fade-enter-active,
+  .banner-fade-leave-active { transition: none; }
 }
 </style>

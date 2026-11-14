@@ -20,6 +20,7 @@ func BuiltinRoleSeeds() []RoleSeed {
 				// /admin/* 之类通配策略，避免新增 GET 接口时自动泄露密钥、
 				// 卡密、交付内容或第三方原始报文。
 				{Object: "/admin/dashboard/overview", Action: "GET"},
+				{Object: "/admin/dashboard/home-visitors", Action: "GET"},
 				{Object: "/admin/dashboard/trends", Action: "GET"},
 				{Object: "/admin/dashboard/rankings", Action: "GET"},
 				{Object: "/admin/dashboard/inventory-alerts", Action: "GET"},

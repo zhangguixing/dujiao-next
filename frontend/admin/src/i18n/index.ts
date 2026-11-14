@@ -735,6 +735,13 @@ const messages = {
         title: '运营仪表盘',
         subtitle: '聚合订单、支付、库存与用户核心指标',
         period: '统计周期',
+        homeVisitors: {
+          title: '首页访客统计',
+          scope: '统计主站和分销站首页的独立访客，按服务器时区划分日期。',
+          today: '今日访客',
+          total: '累计访客',
+          unavailable: '暂时无法加载访客统计',
+        },
         filters: {
           range: '时间范围',
           from: '开始日期',
@@ -5283,6 +5290,13 @@ const messages = {
         title: '營運儀表板',
         subtitle: '聚合訂單、支付、庫存與用戶核心指標',
         period: '統計週期',
+        homeVisitors: {
+          title: '首頁訪客統計',
+          scope: '統計主站和分銷站首頁的獨立訪客，依伺服器時區劃分日期。',
+          today: '今日訪客',
+          total: '累計訪客',
+          unavailable: '暫時無法載入訪客統計',
+        },
         filters: {
           range: '時間範圍',
           from: '開始日期',
@@ -9831,6 +9845,13 @@ const messages = {
         title: 'Operations Dashboard',
         subtitle: 'Key metrics across orders, payments, stock, and users',
         period: 'Period',
+        homeVisitors: {
+          title: 'Homepage visitors',
+          scope: 'Unique homepage visitors across the main and reseller storefronts. Days follow the server time zone.',
+          today: 'Today',
+          total: 'All time',
+          unavailable: 'Visitor statistics are temporarily unavailable',
+        },
         filters: {
           range: 'Time Range',
           from: 'From Date',

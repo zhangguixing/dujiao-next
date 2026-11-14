@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatMoney, getLocalizedText } from '@/utils/format'
 import { formatSkuDisplayLabel } from '@/utils/sku'
 import type { AdminDashboardInventoryAlert } from '@/api/types'
+import { useAdminAuthStore } from '@/stores/auth'
 import DashboardAd from '@/components/admin/DashboardAd.vue'
 
 interface DashboardAlertItem {
@@ -114,6 +115,12 @@ interface DashboardRankings {
 }
 
 const { t, locale } = useI18n()
+const authStore = useAdminAuthStore()
+const canViewHomeVisitors = computed(() => authStore.hasPermission('GET:/admin/dashboard/home-visitors'))
+const homeVisitors = ref<{ today: number; total: number } | null>(null)
+const loadingHomeVisitors = ref(false)
+const homeVisitorsError = ref(false)
+const visitorNumberFormat = computed(() => new Intl.NumberFormat(locale.value))
 
 const rankingSkuLabel = (item: DashboardProductRanking) =>
   formatSkuDisplayLabel({ sku_code: item.sku_code, spec_values: item.sku_spec_values }, locale.value)
@@ -316,8 +323,24 @@ const handleCustomRangeChange = () => {
   loadDashboard()
 }
 
+const loadHomeVisitors = async () => {
+  if (!canViewHomeVisitors.value || loadingHomeVisitors.value) return
+  loadingHomeVisitors.value = true
+  homeVisitorsError.value = false
+  try {
+    const response = await adminAPI.getDashboardHomeVisitors()
+    homeVisitors.value = response.data.data
+  } catch {
+    homeVisitors.value = null
+    homeVisitorsError.value = true
+  } finally {
+    loadingHomeVisitors.value = false
+  }
+}
+
 const refreshDashboard = () => {
   loadDashboard(true)
+  loadHomeVisitors()
 }
 
 const alertClass = (level: string) => {
@@ -376,6 +399,7 @@ const channelLabel = (item: DashboardChannelRanking) => {
 
 onMounted(() => {
   loadDashboard()
+  loadHomeVisitors()
 })
 </script>
 
@@ -415,7 +439,7 @@ onMounted(() => {
           :placeholder="t('admin.dashboard.filters.to')"
           @update:modelValue="handleCustomRangeChange"
         />
-        <Button size="sm" variant="outline" class="h-9 w-full sm:w-auto" :disabled="loadingOverview || loadingTrends || loadingRankings" @click="refreshDashboard">
+        <Button size="sm" variant="outline" class="h-9 w-full sm:w-auto" :disabled="loadingOverview || loadingTrends || loadingRankings || loadingHomeVisitors" @click="refreshDashboard">
           {{ t('admin.dashboard.actions.refreshNow') }}
         </Button>
       </div>
@@ -428,6 +452,26 @@ onMounted(() => {
     <div class="min-w-0">
       <DashboardAd slot-code="dashboard_top_banner" layout="banner" />
     </div>
+
+    <Card v-if="canViewHomeVisitors" :aria-busy="loadingHomeVisitors">
+      <CardHeader class="pb-3">
+        <CardTitle>{{ t('admin.dashboard.homeVisitors.title') }}</CardTitle>
+        <p class="text-sm text-muted-foreground">{{ t('admin.dashboard.homeVisitors.scope') }}</p>
+      </CardHeader>
+      <CardContent aria-live="polite">
+        <p v-if="homeVisitorsError" class="text-sm text-muted-foreground">{{ t('admin.dashboard.homeVisitors.unavailable') }}</p>
+        <dl v-else class="grid grid-cols-2 gap-4 sm:max-w-md">
+          <div>
+            <dt class="text-xs text-muted-foreground">{{ t('admin.dashboard.homeVisitors.today') }}</dt>
+            <dd class="text-2xl font-semibold tabular-nums">{{ homeVisitors ? visitorNumberFormat.format(homeVisitors.today) : '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted-foreground">{{ t('admin.dashboard.homeVisitors.total') }}</dt>
+            <dd class="text-2xl font-semibold tabular-nums">{{ homeVisitors ? visitorNumberFormat.format(homeVisitors.total) : '—' }}</dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
       <Card class="min-w-0">

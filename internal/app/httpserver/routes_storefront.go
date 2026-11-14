@@ -21,6 +21,7 @@ import (
 	paymentcallbacktransport "github.com/dujiao-next/internal/modules/payment/transport/http/callback"
 	resellertransport "github.com/dujiao-next/internal/modules/reseller/transport/http/user"
 	publicconfigtransport "github.com/dujiao-next/internal/modules/settings/transport/http/public"
+	storefrontstatshttp "github.com/dujiao-next/internal/modules/storefrontstats/transport/http"
 	uploadtransport "github.com/dujiao-next/internal/modules/upload/transport/http"
 	wallettransport "github.com/dujiao-next/internal/modules/wallet/transport/http"
 
@@ -82,6 +83,13 @@ func registerStorefrontRoutes(
 		captchatransport.RegisterPublicRoutes(public, captchatransport.NewPublicHandler(c.CaptchaService))
 		affiliatetransport.RegisterPublicRoutes(public, affiliateHandler)
 		memberleveltransport.RegisterPublicRoutes(public, publicMemberLevelHandler)
+		visitorLimit := middleware.RateLimitRule{
+			Prefix:        loginRule.Prefix + ":home-visitors",
+			WindowSeconds: 60,
+			MaxRequests:   60,
+		}
+		storefrontstatshttp.RegisterPublicRoutes(public, c.StorefrontStatsStore,
+			middleware.RateLimitMiddleware(redisClient, visitorLimit, middleware.KeyByIP))
 	}
 
 	// 游客接口

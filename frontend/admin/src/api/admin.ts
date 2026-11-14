@@ -427,6 +427,7 @@ export const adminAPI = {
     api.post('/admin/system/update/rollback', data ?? {}),
   restartSystemService: () => api.post('/admin/system/restart'),
   getDashboardOverview: (params?: Record<string, unknown>) => api.get('/admin/dashboard/overview', { params }),
+  getDashboardHomeVisitors: () => api.get('/admin/dashboard/home-visitors'),
   getDashboardTrends: (params?: Record<string, unknown>) => api.get('/admin/dashboard/trends', { params }),
   getDashboardRankings: (params?: Record<string, unknown>) => api.get('/admin/dashboard/rankings', { params }),
   getDashboardInventoryAlerts: () => api.get('/admin/dashboard/inventory-alerts'),

@@ -35,6 +35,7 @@ import (
 	resellertransport "github.com/dujiao-next/internal/modules/reseller/transport/http/admin"
 	settingstransport "github.com/dujiao-next/internal/modules/settings/transport/http"
 	siteconnectiontransport "github.com/dujiao-next/internal/modules/siteconnection/transport/http"
+	storefrontstatshttp "github.com/dujiao-next/internal/modules/storefrontstats/transport/http"
 	broadcasthttp "github.com/dujiao-next/internal/modules/telegram/broadcast/transport/http"
 	uploadtransport "github.com/dujiao-next/internal/modules/upload/transport/http"
 	wallettransport "github.com/dujiao-next/internal/modules/wallet/transport/http"
@@ -102,6 +103,7 @@ func registerAdminRoutes(
 
 	// 仪表盘
 	dashboardtransport.RegisterAdminRoutes(authorized, adminDashboardHandler)
+	storefrontstatshttp.RegisterAdminRoutes(authorized, c.StorefrontStatsStore)
 
 	// 广告代理
 	adproxytransport.RegisterAdminRoutes(authorized, adproxytransport.NewAdminHandler(c.AdProxyService))

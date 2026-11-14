@@ -33,6 +33,7 @@ import (
 	resellerstore "github.com/dujiao-next/internal/modules/reseller/infrastructure/gormstore"
 	settingsstore "github.com/dujiao-next/internal/modules/settings/infrastructure/gormstore"
 	siteconnectiondomain "github.com/dujiao-next/internal/modules/siteconnection/domain"
+	storefrontstatsdomain "github.com/dujiao-next/internal/modules/storefrontstats/domain"
 	broadcastdomain "github.com/dujiao-next/internal/modules/telegram/broadcast/domain"
 	walletdomain "github.com/dujiao-next/internal/modules/wallet/domain"
 	"github.com/dujiao-next/internal/platform/database/gormdb"
@@ -85,6 +86,7 @@ func AutoMigrate() error {
 		&contentdomain.PostCategory{},
 		&contentdomain.Banner{},
 		&settingsstore.SettingRecord{},
+		&storefrontstatsdomain.HomeVisitor{},
 		&apicredentialdomain.ApiCredential{},
 		&siteconnectiondomain.Connection{},
 		&mappingdomain.Mapping{},

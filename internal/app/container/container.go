@@ -74,6 +74,7 @@ import (
 	siteconnectionapp "github.com/dujiao-next/internal/modules/siteconnection/application"
 	siteconnectioncontract "github.com/dujiao-next/internal/modules/siteconnection/contract"
 	sitemapapp "github.com/dujiao-next/internal/modules/sitemap/application"
+	storefrontstatscontract "github.com/dujiao-next/internal/modules/storefrontstats/contract"
 	broadcastapp "github.com/dujiao-next/internal/modules/telegram/broadcast/application"
 	broadcastcontract "github.com/dujiao-next/internal/modules/telegram/broadcast/contract"
 	uploadapp "github.com/dujiao-next/internal/modules/upload/application"
@@ -109,6 +110,7 @@ type Container struct {
 	WalletRepo             *walletgormstore.Store
 	CategoryRepo           categorycontract.Repository
 	SettingRepo            settingscontract.Store
+	StorefrontStatsStore   storefrontstatscontract.Store
 	UserLoginLogRepo       auditlogcontract.UserLoginRepository
 	AuthzAuditLogRepo      auditlogcontract.AuthzRepository
 	NotificationLogRepo    *notificationgormstore.LogStore

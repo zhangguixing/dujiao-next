@@ -94,7 +94,7 @@
   "home": {
     "hero": {
       "title": "Dujiao-Next",
-      "subtitle": "Professional Products and Services Provider",
+      "subtitle": "Find and buy digital products.",
       "cta": "Browse Products",
       "badge": "Next Gen Digital Store"
     },
@@ -135,6 +135,7 @@
     "next": "Next",
     "price": "Price",
     "categoryLabel": "Category",
+    "clearSearch": "Clear search",
     "searchLabel": "Search",
     "resultsCount": "{count} product | {count} products",
     "searchPlaceholder": "Search products",

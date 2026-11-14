@@ -204,6 +204,43 @@
   --ui-price-original: #8e8e93;
 }
 
+:root:has(.storefront-shell) {
+  --ui-bg-page: #f1f5fe;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-soft: #edf2fd;
+  --ui-bg-muted: #e5ecfb;
+  --ui-bg-overlay: rgb(245 248 255 / .8);
+  --ui-bg-overlay-strong: rgb(248 250 255 / .94);
+  --ui-text-primary: #142342;
+  --ui-text-secondary: #35476a;
+  --ui-text-muted: #576989;
+  --ui-border: rgb(46 73 124 / .17);
+  --ui-border-strong: rgb(46 73 124 / .28);
+  --ui-accent: #3154c7;
+  --ui-accent-hover: #2442ac;
+  --ui-accent-soft: rgb(76 112 225 / .14);
+  --ui-focus-ring: rgb(49 84 199 / .26);
+}
+
+:root.dark:has(.storefront-shell) {
+  --ui-bg-page: #090f20;
+  --ui-bg-elevated: #121d34;
+  --ui-bg-soft: #1b2944;
+  --ui-bg-muted: #17233c;
+  --ui-bg-overlay: rgb(14 23 42 / .8);
+  --ui-bg-overlay-strong: rgb(14 23 42 / .94);
+  --ui-text-primary: #edf3ff;
+  --ui-text-secondary: #c4d0ea;
+  --ui-text-muted: #a3b2d2;
+  --ui-text-on-accent: #101c34;
+  --ui-border: rgb(148 173 225 / .22);
+  --ui-border-strong: rgb(148 173 225 / .38);
+  --ui-accent: #9ab7ff;
+  --ui-accent-hover: #bfd1ff;
+  --ui-accent-soft: rgb(92 132 255 / .22);
+  --ui-focus-ring: rgb(154 183 255 / .34);
+}
+
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;

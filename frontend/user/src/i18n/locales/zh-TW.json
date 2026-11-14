@@ -94,7 +94,7 @@
   "home": {
     "hero": {
       "title": "Dujiao-Next · D&N",
-      "subtitle": "專業的產品與服務提供商",
+      "subtitle": "尋找並購買數位商品。",
       "cta": "瀏覽商品",
       "badge": "新一代數位商店"
     },
@@ -135,6 +135,7 @@
     "next": "下一頁",
     "price": "價格",
     "categoryLabel": "分類",
+    "clearSearch": "清除搜尋",
     "searchLabel": "搜尋",
     "resultsCount": "共 {count} 件商品",
     "searchPlaceholder": "搜尋商品名稱",

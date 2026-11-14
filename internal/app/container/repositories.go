@@ -31,6 +31,7 @@ import (
 	resellergormstore "github.com/dujiao-next/internal/modules/reseller/infrastructure/gormstore"
 	settingsstore "github.com/dujiao-next/internal/modules/settings/infrastructure/gormstore"
 	siteconnectiongormstore "github.com/dujiao-next/internal/modules/siteconnection/infrastructure/gormstore"
+	storefrontstatsstore "github.com/dujiao-next/internal/modules/storefrontstats/infrastructure/gormstore"
 	broadcaststore "github.com/dujiao-next/internal/modules/telegram/broadcast/infrastructure/gormstore"
 	walletgormstore "github.com/dujiao-next/internal/modules/wallet/infrastructure/gormstore"
 	"github.com/dujiao-next/internal/platform/database/gormdb"
@@ -62,6 +63,7 @@ func (c *Container) initRepositories() error {
 	c.WalletRepo = walletgormstore.New(db)
 	c.CategoryRepo = categorygormstore.NewCategoryStore(db)
 	c.SettingRepo = settingsstore.New(db)
+	c.StorefrontStatsStore = storefrontstatsstore.New(db)
 	c.UserLoginLogRepo = auditloggormstore.NewUserLoginStore(db)
 	c.AuthzAuditLogRepo = auditloggormstore.NewAuthzStore(db)
 	c.NotificationLogRepo = notificationgormstore.NewLogStore(db)
